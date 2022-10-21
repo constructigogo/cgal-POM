@@ -16,6 +16,7 @@ find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
 create_single_source_cgal_program("iterate_over_vertex.cpp")
 create_single_source_cgal_program("sew_2_quadrangles.cpp")
 create_single_source_cgal_program("sew_6_quadrangles.cpp")
+create_single_source_cgal_program("multithread_iterator_crash.cpp")
 
 if(CGAL_Qt5_FOUND)
   target_link_libraries(iterate_over_vertex PUBLIC CGAL::CGAL_Basic_viewer)
