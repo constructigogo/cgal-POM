@@ -5,7 +5,6 @@
 #include <CGAL/Linear_cell_complex_constructors.h>
 #include <CGAL/Polyhedron_3_to_lcc.h>
 
-#include <functional>//for std::function
 #include <thread>
 
 //Nombre de threads qui vont parcourir la LCC en parallèle
