@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 3.1...3.23)
 project(linear_cell_complex_experimentations)
 
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
+find_package( TBB REQUIRED )
+include(CGAL_TBB_support)
 
 # For Gprof.
 # ADD_DEFINITIONS("-pg")
@@ -24,3 +26,5 @@ if(CGAL_Qt5_FOUND)
   target_link_libraries(sew_2_quadrangles PUBLIC CGAL::CGAL_Basic_viewer)
   target_link_libraries(sew_6_quadrangles PUBLIC CGAL::CGAL_Basic_viewer)
 endif()
+
+target_link_libraries(concurrent_compact_container PUBLIC CGAL::TBB_support)

@@ -25,7 +25,7 @@ using namespace CGAL;
 
 struct Concurrent_items : public Linear_cell_complex_min_items
 {
-    typedef void Use_concurrent_container;
+  typedef CGAL::Tag_true Use_concurrent_container;
 };
 
 typedef Linear_cell_complex_for_combinatorial_map<3, 3, Linear_cell_complex_traits<3>, Concurrent_items> LCC;
