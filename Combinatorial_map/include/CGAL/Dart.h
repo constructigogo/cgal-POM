@@ -18,6 +18,8 @@
 #include <bitset>
 #include <CGAL/Cell_attribute.h>
 
+std::mutex g_bitset_mutex;
+
 namespace CGAL {
 
   template <class, class, class, class>
@@ -189,6 +191,8 @@ namespace CGAL {
     bool get_mark(size_type amark) const
     {
       CGAL_assertion(amark>=0 && amark<NB_MARKS);
+
+      //std::lock_guard<std::mutex> guard(g_bitset_mutex);
       return mmarks[amark];
     }
 

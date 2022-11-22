@@ -58,6 +58,96 @@ _Pragma("GCC diagnostic push")
 _Pragma("GCC diagnostic ignored \"-Warray-bounds\"")
 #endif
 
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <atomic>
+#include <vector>
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+namespace bits {
+  template <typename Storage, bool Atomic>
+  struct TypeChooser;
+
+  template <typename Storage>
+  struct TypeChooser<Storage, true> {
+    using type = std::atomic<Storage>;
+  };
+
+  template <typename Storage>
+  struct TypeChooser<Storage, false> {
+    using type = Storage;
+  };
+} // ns bits
+
+
+template <typename Storage=std::uint8_t, bool Atomic=true>
+class DynamicBitset {
+
+  using type = typename bits::TypeChooser<Storage, Atomic>::type;
+  static constexpr std::size_t size = sizeof(Storage);
+
+public:
+  explicit DynamicBitset(std::size_t size)
+    : data(ComputeVectorSize(size))
+  {
+    for (auto& elem: data)
+      elem = 0;
+  }
+
+  bool
+  Get(std::size_t index) const
+  {
+    std::size_t quot;
+    std::size_t rem;
+    DivMod(index, quot, rem);
+
+    return data[quot] & (1 << rem);
+  }
+
+  void
+  Set(std::size_t index)
+  {
+    std::size_t quot;
+    std::size_t rem;
+    DivMod(index, quot, rem);
+
+    data[quot] |= (1 << rem);
+  }
+
+private:
+  std::vector<type> data;
+
+  static void
+  DivMod(std::size_t index, std::size_t& quot, std::size_t& rem)
+  {
+    quot = std::floor(index / size);
+    rem = index - (quot * size);
+  }
+
+  static std::size_t
+  ComputeVectorSize(std::size_t elementCount)
+  {
+    std::size_t quot;
+    std::size_t rem;
+
+    DivMod(elementCount, quot, rem);
+    if (rem != 0)
+      ++quot;
+
+    return (quot * size);
+  }
+};
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 namespace CGAL {
   // functions to allow the call to next/opposite by ADL
   template <typename G, typename Desc>
@@ -1030,7 +1120,7 @@ namespace CGAL {
       size_type m = mfree_marks_stack[mnb_used_marks];
       mused_marks_stack[mnb_used_marks] = m;
 
-      mindex_marks[m] = mnb_used_marks;
+      mindex_marks[m] = mnb_used_marks.load();
       mnb_times_reserved_marks[m]=1;
 
       ++mnb_used_marks;
@@ -1194,13 +1284,13 @@ namespace CGAL {
       // 1) We remove amark from the array mused_marks_stack by
       //    replacing it with the last mark in this array.
       mused_marks_stack[mindex_marks[amark]] =
-        mused_marks_stack[--mnb_used_marks];
+        mused_marks_stack[--mnb_used_marks].load();
       mindex_marks[mused_marks_stack[mnb_used_marks]] =
-        mindex_marks[amark];
+        mindex_marks[amark].load();
 
       // 2) We add amark in the array mfree_marks_stack and update its index.
       mfree_marks_stack[ mnb_used_marks ] = amark;
-      mindex_marks[amark] = mnb_used_marks;
+      mindex_marks[amark] = mnb_used_marks.load();
 
       mnb_times_reserved_marks[amark]=0;
     }
@@ -4739,25 +4829,25 @@ namespace CGAL {
 
   protected:
     /// Number of times each mark is reserved. 0 if the mark is free.
-    mutable size_type mnb_times_reserved_marks[NB_MARKS];
+    mutable std::atomic<size_type> mnb_times_reserved_marks[NB_MARKS];
 
     /// Mask marks to know the value of unmark dart, for each index i.
     mutable std::bitset<NB_MARKS> mmask_marks;
 
     /// Number of used marks.
-    mutable size_type mnb_used_marks;
+    mutable std::atomic<size_type> mnb_used_marks;
 
     /// Index of each mark, in mfree_marks_stack or in mfree_marks_stack.
-    mutable size_type mindex_marks[NB_MARKS];
+    mutable std::atomic<size_type> mindex_marks[NB_MARKS];
 
     /// "Stack" of free marks.
-    mutable size_type mfree_marks_stack[NB_MARKS];
+    mutable std::atomic<size_type> mfree_marks_stack[NB_MARKS];
 
     /// "Stack" of used marks.
-    mutable size_type mused_marks_stack[NB_MARKS];
+    mutable std::atomic<size_type> mused_marks_stack[NB_MARKS];
 
     /// Number of marked darts for each used marks.
-    mutable size_type mnb_marked_darts[NB_MARKS];
+    mutable std::atomic<size_type> mnb_marked_darts[NB_MARKS];
 
     /// Automatic management of the attributes:
     /// true means attributes are always maintained updated during operations.

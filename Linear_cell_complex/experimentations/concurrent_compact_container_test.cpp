@@ -8,7 +8,7 @@
 #include <thread>
 
 //Nombre de threads qui vont parcourir la LCC en parallèle
-#define NB_THREADS 16
+#define NB_THREADS 64
 
 //Combien de fois on va répéter l'itération sur 
 //la LCC. Ce paramètre sert uniquement à avoir
@@ -19,13 +19,13 @@
 //Si on répète 100 fois les itérations, on a 
 //beaucoup plus de chance de faire crasher 
 //le programme
-#define ITERATIONS 100
+#define ITERATIONS 1000
 
 using namespace CGAL;
 
 struct Concurrent_items : public Linear_cell_complex_min_items
 {
-  typedef CGAL::Tag_true Use_concurrent_container;
+  //typedef CGAL::Tag_true Use_concurrent_container;
 };
 
 typedef Linear_cell_complex_for_combinatorial_map<3, 3, Linear_cell_complex_traits<3>, Concurrent_items> LCC;
@@ -42,7 +42,7 @@ void import_hexaedron_into_lcc(LCC& lcc)
     lcc.make_hexahedron(Point(0, 0, 0), Point(1, 0, 0), Point(1, 0, 1), Point(0, 0, 1), Point(0, 1, 1), Point(0, 1, 0), Point(1, 1, 0), Point(1, 1, 1));
 }
 
-void construct_lcc_crash() {
+void add_hexaedron_to_lcc_parallel() {
 
     std::array<std::thread, NB_THREADS> threads;
 
@@ -74,7 +74,7 @@ void construct_lcc_crash() {
 
 int main()
 {
-    construct_lcc_crash();
+    add_hexaedron_to_lcc_parallel();
 
     std::cout << "done" << std::endl;
 }

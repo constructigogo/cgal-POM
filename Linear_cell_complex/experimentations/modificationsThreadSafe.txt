@@ -1,0 +1,7 @@
+std::atomic sur les attributs des marks
+
+std::mutex global pour le bitset en attendant d'avoir le bitset thread safe dans Dart.h
+
+Mutexes:
+combinatorial_map.h is_marked
+Dart.h get_mark()

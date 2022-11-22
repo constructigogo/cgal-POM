@@ -8,7 +8,7 @@
 #include <thread>
 
 //Nombre de threads qui vont parcourir la LCC en parallèle
-#define NB_THREADS 2
+#define NB_THREADS 20
 
 //Combien de fois on va répéter l'itération sur 
 //la LCC. Ce paramètre sert uniquement à avoir
@@ -19,12 +19,17 @@
 //Si on répète 100 fois les itérations, on a 
 //beaucoup plus de chance de faire crasher 
 //le programme
-#define ITERATIONS 1
+#define ITERATIONS 100
 
 using namespace CGAL;
 
-typedef Linear_cell_complex_for_combinatorial_map<3> LCC;
-typedef Linear_cell_complex_for_combinatorial_map<2> LCC_2;
+struct ConcurrentItems : Linear_cell_complex_min_items
+{
+    typedef CGAL::Tag_true Use_concurrent_container;
+};
+
+//typedef Linear_cell_complex_for_combinatorial_map<3> LCC;
+typedef Linear_cell_complex_for_combinatorial_map<3, 3, Linear_cell_complex_traits<3>, ConcurrentItems> LCC;
 
 template <unsigned int d>
 using One_dart_per_cell_range = LCC::One_dart_per_cell_range<d>;
@@ -35,79 +40,61 @@ typedef LCC::Dart_descriptor Dart_descriptor;
 typedef LCC::Dart Dart;
 typedef LCC::Point Point;
 
-void display_volumes_darts(LCC& lcc, int threadId) {
-    One_dart_per_cell_range<3> volumes_range = lcc.one_dart_per_cell<3>();
-    for(One_dart_per_cell_range<3>::iterator 
-        start = volumes_range.begin(), 
-        end = volumes_range.end(); 
-        start != end;
-        start++)
-    {
-        //Affichage désactivé pour plus de clarté
-        //std::cout << "Thread [" << threadId << "]: " << lcc.point_of_vertex_attribute(lcc.vertex_attribute(start)) << std::endl;
-    }
-}
+template <unsigned int d>
+void iterate_over_darts(LCC& lcc) {
+    One_dart_per_cell_range<d> vertices_range = lcc.one_dart_per_cell<d>();
 
-void display_vertices_darts(LCC& lcc, int threadId) {
-    One_dart_per_cell_range<1> vertices_range = lcc.one_dart_per_cell<1>();
-    for(One_dart_per_cell_range<1>::iterator 
+    for(typename One_dart_per_cell_range<d>::iterator
         start = vertices_range.begin(), 
         end = vertices_range.end(); 
         start != end;
         start++)
     {
-        //Affichage désactivé pour plus de clarté
-        //std::cout << "Thread [" << threadId << "]: " << lcc.point_of_vertex_attribute(lcc.vertex_attribute(start)) << std::endl;
+        ;
     }
 }
 
-/*!
-* @param lcc La LCC sur laquelle on va itérer
-* @param threadId Le numéro du thread qui exécute cette
-* fonction. L'id est utilisé pour pouvoir générer un 
-* nom de fichier unique en fonction du thread afin 
-* que le thread puisse écrire ses résultats dans son 
-* propre fichier à lui
-*/
-void vertices_darts_to_file(LCC& lcc, int threadId) {
-    //Génération du nom de fichier en fonction du threadId
-    std::string outputFileName = "out";
-    outputFileName += std::to_string(threadId);
-    outputFileName += ".txt";
+//template<unsigned int d>
+//void iterate_over_darts_concurrent(ConcurrentItemsLCC& lcc) {
+//    ConcurrentItemsLCC::One_dart_per_cell_range<d> vertices_range = lcc.one_dart_per_cell<d>();
 
-    std::string outputFilePath = "outFiles/";
-    outputFilePath += outputFileName;
+//    for(typename ConcurrentItemsLCC::One_dart_per_cell_range<d>::iterator
+//        start = vertices_range.begin(),
+//        end = vertices_range.end();
+//        start != end;
+//        start++)
+//    {
+//        ;
+//    }
+//}
 
-    //Ouverture du fichier qui va accueillir les 
-    //résultats du thread (plutôt que de tout écrire 
-    //dans la console en vrac avec tous les threads 
-    //qui écrivent dans tous les sens en même temps)
-    std::ofstream outputFile;
-    outputFile.open(outputFilePath);
+template<unsigned int d>
+void iterate_over_darts_concurrent(LCC& lcc) {
+    LCC::One_dart_per_cell_range<d> vertices_range = lcc.one_dart_per_cell<d>();
 
-    One_dart_per_cell_range<0> vertices_range = lcc.one_dart_per_cell<0>();
-    for(One_dart_per_cell_range<0>::iterator start = vertices_range.begin(), end = vertices_range.end(); start != end;)
+    for(typename LCC::One_dart_per_cell_range<d>::iterator
+        start = vertices_range.begin(),
+        end = vertices_range.end();
+        start != end;
+        start++)
     {
-        outputFile << lcc.point_of_vertex_attribute(lcc.vertex_attribute(start)) << std::endl;
-
-        start++;
+        ;
     }
 }
 
-void import_bunny_into_lcc(LCC& lcc, int thread_id) {
+template <typename LCC>
+void import_bunny_into_lcc(LCC& lcc) {
     std::ifstream inputFile("../data/bunny00.off");
 
     CGAL::import_from_polyhedron_3_flux<LCC>(lcc, inputFile);
 }
 
-void iterator_crash() {
+void iterator_compact_container() {
     //Tableau qui va stocker tous les handles des threads qu'on va créer
     std::array<std::thread, NB_THREADS> threads;
 
     LCC lcc;
-
-    std::ifstream inputFile("../data/bunny00.off");
-    CGAL::import_from_polyhedron_3_flux<LCC>(lcc, inputFile);
+    import_bunny_into_lcc(lcc);
 
     //En lançant deux threads qui vont itérer sur les même darts,
     //on va avoir des problèmes de concurrence sur la gestion des
@@ -116,7 +103,7 @@ void iterator_crash() {
     {
         for(int i = 0; i < NB_THREADS; i++)
         {
-            threads[i] = std::thread( display_vertices_darts, std::ref(lcc), i + 1);
+            threads[i] = std::thread(iterate_over_darts<1>, std::ref(lcc));
 
             //Si on décommente cette ligne, les deux
             //threads ne vont pas s'exécuter en parallèle
@@ -147,16 +134,19 @@ void iterator_crash() {
     }
 }
 
-void construct_lcc_crash() {
-    LCC lcc;
-
+void iterator_concurrent_compact_container() {
+    //Tableau qui va stocker tous les handles des threads qu'on va créer
     std::array<std::thread, NB_THREADS> threads;
+
+    LCC lcc;
+    //import_bunny_into_lcc(lcc);
+    lcc.make_hexahedron(Point(0, 0, 0), Point(1, 0, 0), Point(1, 0, 1), Point(0, 0, 1), Point(0, 1, 1), Point(0, 1, 0), Point(1, 1, 0), Point(1, 1, 1));
 
     for(int iter = 0; iter < ITERATIONS; iter++)
     {
         for(int i = 0; i < NB_THREADS; i++)
         {
-            threads[i] = std::thread(import_bunny_into_lcc, std::ref(lcc), i + 1);
+            threads[i] = std::thread(iterate_over_darts_concurrent<1>, std::ref(lcc));
 
             //threads[i].join();
         }
@@ -178,6 +168,6 @@ void construct_lcc_crash() {
 
 int main()
 {
-    //iterator_crash();
-    construct_lcc_crash();
+    //iterator_compact_container();
+    iterator_concurrent_compact_container();
 }
