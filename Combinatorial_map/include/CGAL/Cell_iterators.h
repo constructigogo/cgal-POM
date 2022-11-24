@@ -303,6 +303,7 @@ namespace CGAL {
       Base(amap),
       mmark_number(amap.get_new_mark())
     {
+        std::cout << "mark number [" << std::this_thread::get_id() << "]: " << mmark_number << std::endl;
       CGAL_static_assertion( (std::is_same<typename Base::Basic_iterator,
                               Tag_true>::value) );
       CGAL_assertion(amap.is_whole_map_unmarked(mmark_number));

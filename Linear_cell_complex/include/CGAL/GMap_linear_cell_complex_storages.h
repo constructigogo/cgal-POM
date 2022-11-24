@@ -12,11 +12,11 @@
 #ifndef CGAL_GMAP_LINEAR_CELL_COMPLEX_STORAGES_H
 #define CGAL_GMAP_LINEAR_CELL_COMPLEX_STORAGES_H 1
 
+#include <CGAL/Combinatorial_map/internal/Combinatorial_map_concurrent_bitset.h>
 #include <CGAL/Compact_container.h>
 #include <CGAL/Concurrent_compact_container.h>
-#include <CGAL/Dart.h>
 #include <CGAL/Handle_hash_function.h>
-#include <bitset>
+#include <CGAL/Dart.h>
 
 #include <boost/config.hpp>
 #if defined(BOOST_GCC)
@@ -190,13 +190,13 @@ namespace CGAL {
 
     /// Set simultaneously all the marks of this dart to a given value.
     void set_dart_marks(Dart_const_descriptor ADart,
-                        const std::bitset<NB_MARKS>& amarks) const
+                        const AtomicBitset<NB_MARKS>& amarks) const
     {
       CGAL_assertion( ADart!=nullptr );
       ADart->set_marks(amarks);
     }
     /// Return all the marks of a dart.
-    std::bitset<NB_MARKS> get_dart_marks(Dart_const_descriptor ADart) const
+    AtomicBitset<NB_MARKS> get_dart_marks(Dart_const_descriptor ADart) const
     {
       CGAL_assertion( ADart!=nullptr );
       return ADart->get_marks();

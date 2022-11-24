@@ -12,6 +12,7 @@
 #ifndef CGAL_COMBINATORIAL_MAP_STORAGES_WITH_INDEX_H
 #define CGAL_COMBINATORIAL_MAP_STORAGES_WITH_INDEX_H 1
 
+#include <CGAL/Combinatorial_map/internal/Combinatorial_map_concurrent_bitset.h>
 #include <CGAL/Compact_container_with_index.h>
 #include <CGAL/Dart.h>
 #include <bitset>
@@ -209,12 +210,12 @@ namespace CGAL {
 
     /// Set simultaneously all the marks of this dart to a given value.
     void set_dart_marks(Dart_const_descriptor ADart,
-                        const std::bitset<NB_MARKS>& amarks) const
+                        const AtomicBitset<NB_MARKS>& amarks) const
     {
       mdarts[ADart].set_marks(amarks);
     }
     /// Return all the marks of a dart.
-    std::bitset<NB_MARKS> get_dart_marks(Dart_const_descriptor ADart) const
+    AtomicBitset<NB_MARKS> get_dart_marks(Dart_const_descriptor ADart) const
     {
       return mdarts[ADart].get_marks();
     }

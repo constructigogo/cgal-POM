@@ -8,7 +8,7 @@
 #include <thread>
 
 //Nombre de threads qui vont parcourir la LCC en parallèle
-#define NB_THREADS 20
+#define NB_THREADS 1
 
 //Combien de fois on va répéter l'itération sur 
 //la LCC. Ce paramètre sert uniquement à avoir
@@ -19,7 +19,7 @@
 //Si on répète 100 fois les itérations, on a 
 //beaucoup plus de chance de faire crasher 
 //le programme
-#define ITERATIONS 100
+#define ITERATIONS 1
 
 using namespace CGAL;
 
@@ -78,7 +78,7 @@ void iterate_over_darts_concurrent(LCC& lcc) {
         start != end;
         start++)
     {
-        ;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
@@ -166,7 +166,7 @@ void iterator_concurrent_compact_container() {
     }
 }
 
-int main()
+int main(int argc, char* argv[])
 {
     //iterator_compact_container();
     iterator_concurrent_compact_container();

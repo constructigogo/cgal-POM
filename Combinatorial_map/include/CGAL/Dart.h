@@ -12,13 +12,11 @@
 #ifndef CGAL_DART_H
 #define CGAL_DART_H 1
 
+#include <CGAL/Combinatorial_map/internal/Combinatorial_map_concurrent_bitset.h>
 #include <CGAL/assertions.h>
 #include <CGAL/tags.h>
 #include <CGAL/tuple.h>
-#include <bitset>
 #include <CGAL/Cell_attribute.h>
-
-std::mutex g_bitset_mutex;
 
 namespace CGAL {
 
@@ -192,7 +190,6 @@ namespace CGAL {
     {
       CGAL_assertion(amark>=0 && amark<NB_MARKS);
 
-      //std::lock_guard<std::mutex> guard(g_bitset_mutex);
       return mmarks[amark];
     }
 
@@ -217,13 +214,13 @@ namespace CGAL {
     /** Return all the marks of this dart.
      * @return the marks.
      */
-     std::bitset<NB_MARKS> get_marks() const
+     AtomicBitset<NB_MARKS> get_marks() const
     { return mmarks; }
 
     /** Set simultaneously all the marks of this dart to a given value.
      * @param amarks the value of the marks.
      */
-     void set_marks(const std::bitset<NB_MARKS>& amarks) const
+     void set_marks(const AtomicBitset<NB_MARKS>& amarks) const
     { mmarks = amarks; }
 
     /// @return a descriptor on the i-attribute
@@ -249,7 +246,7 @@ namespace CGAL {
     Dart_descriptor mf[dimension+1];
 
     /// Values of Boolean marks.
-    mutable std::bitset<NB_MARKS> mmarks;
+    mutable AtomicBitset<NB_MARKS> mmarks;
 
     /// Attributes enabled
     typename Helper::Attribute_descriptors mattribute_descriptors;

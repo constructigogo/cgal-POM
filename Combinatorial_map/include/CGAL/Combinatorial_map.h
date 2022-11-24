@@ -22,6 +22,7 @@
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_group_functors.h>
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_copy_functors.h>
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_sewable.h>
+#include <CGAL/Combinatorial_map/internal/Combinatorial_map_concurrent_bitset.h>
 
 #include <CGAL/Combinatorial_map_storages.h>
 #include <CGAL/Combinatorial_map_storages_with_index.h>
@@ -63,90 +64,6 @@ _Pragma("GCC diagnostic ignored \"-Warray-bounds\"")
 #include <cstdlib>
 #include <atomic>
 #include <vector>
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-namespace bits {
-  template <typename Storage, bool Atomic>
-  struct TypeChooser;
-
-  template <typename Storage>
-  struct TypeChooser<Storage, true> {
-    using type = std::atomic<Storage>;
-  };
-
-  template <typename Storage>
-  struct TypeChooser<Storage, false> {
-    using type = Storage;
-  };
-} // ns bits
-
-
-template <typename Storage=std::uint8_t, bool Atomic=true>
-class DynamicBitset {
-
-  using type = typename bits::TypeChooser<Storage, Atomic>::type;
-  static constexpr std::size_t size = sizeof(Storage);
-
-public:
-  explicit DynamicBitset(std::size_t size)
-    : data(ComputeVectorSize(size))
-  {
-    for (auto& elem: data)
-      elem = 0;
-  }
-
-  bool
-  Get(std::size_t index) const
-  {
-    std::size_t quot;
-    std::size_t rem;
-    DivMod(index, quot, rem);
-
-    return data[quot] & (1 << rem);
-  }
-
-  void
-  Set(std::size_t index)
-  {
-    std::size_t quot;
-    std::size_t rem;
-    DivMod(index, quot, rem);
-
-    data[quot] |= (1 << rem);
-  }
-
-private:
-  std::vector<type> data;
-
-  static void
-  DivMod(std::size_t index, std::size_t& quot, std::size_t& rem)
-  {
-    quot = std::floor(index / size);
-    rem = index - (quot * size);
-  }
-
-  static std::size_t
-  ComputeVectorSize(std::size_t elementCount)
-  {
-    std::size_t quot;
-    std::size_t rem;
-
-    DivMod(elementCount, quot, rem);
-    if (rem != 0)
-      ++quot;
-
-    return (quot * size);
-  }
-};
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace CGAL {
   // functions to allow the call to next/opposite by ADL
@@ -960,7 +877,7 @@ namespace CGAL {
     // Initialize a given dart: all beta to null_dart_descriptor and all
     // attributes to null, marks are given.
     void init_dart(Dart_descriptor adart,
-                   const std::bitset<NB_MARKS>& amarks)
+                   const AtomicBitset<NB_MARKS>& amarks)
     {
       set_marks(adart, amarks);
 
@@ -1123,6 +1040,7 @@ namespace CGAL {
       mindex_marks[m] = mnb_used_marks.load();
       mnb_times_reserved_marks[m]=1;
 
+      std::cout << "used marks[" << std::this_thread::get_id() << "]: " << mnb_used_marks << std::endl;
       ++mnb_used_marks;
       CGAL_assertion(is_whole_map_unmarked(m));
 
@@ -2811,14 +2729,14 @@ namespace CGAL {
      * @param amarks the marks to set.
      */
     void set_marks(Dart_const_descriptor adart,
-                   const std::bitset<NB_MARKS> & amarks) const
+                   const AtomicBitset<NB_MARKS>& amarks) const
     { set_dart_marks(adart, amarks ^ mmask_marks); }
 
     /** Get simultaneously all the marks of a given dart.
      * @param adart the dart.
      * @return allt the marks of adart.
      */
-    std::bitset<NB_MARKS> get_marks(Dart_const_descriptor adart) const
+    AtomicBitset<NB_MARKS> get_marks(Dart_const_descriptor adart) const
     { return get_dart_marks(adart) ^ mmask_marks; }
 
     /** Get the mask associated to a given mark.
@@ -4832,7 +4750,7 @@ namespace CGAL {
     mutable std::atomic<size_type> mnb_times_reserved_marks[NB_MARKS];
 
     /// Mask marks to know the value of unmark dart, for each index i.
-    mutable std::bitset<NB_MARKS> mmask_marks;
+    mutable AtomicBitset<NB_MARKS> mmask_marks;
 
     /// Number of used marks.
     mutable std::atomic<size_type> mnb_used_marks;

@@ -21,7 +21,7 @@
 // An STL like container, similar to Compact_container, but uses indices
 // instead of handles.
 // - free list can be stored in a std::deque or in a data member stored in T
-// - Boolean used to mark used/free elements can be stored in a std::bitset
+// - Boolean used to mark used/free elements can be stored in an AtomicBitset
 //   or in the most significant bit of the data member.
 
 // TODO low priority :
