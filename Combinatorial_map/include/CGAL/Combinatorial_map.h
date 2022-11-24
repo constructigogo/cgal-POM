@@ -1040,7 +1040,7 @@ namespace CGAL {
       mindex_marks[m] = mnb_used_marks.load();
       mnb_times_reserved_marks[m]=1;
 
-      std::cout << "used marks[" << std::this_thread::get_id() << "]: " << mnb_used_marks << std::endl;
+      std::cout << "used marks  [" << std::this_thread::get_id() << "]: " << mnb_used_marks << std::endl;
       ++mnb_used_marks;
       CGAL_assertion(is_whole_map_unmarked(m));
 

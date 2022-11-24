@@ -1,4 +1,4 @@
-#define CGAL_NO_ASSERTIONS
+//#define CGAL_NO_ASSERTIONS
 
 #include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
 #include <CGAL/Generalized_map.h>
@@ -8,7 +8,7 @@
 #include <thread>
 
 //Nombre de threads qui vont parcourir la LCC en parallèle
-#define NB_THREADS 1
+#define NB_THREADS 10
 
 //Combien de fois on va répéter l'itération sur 
 //la LCC. Ce paramètre sert uniquement à avoir
@@ -45,9 +45,8 @@ void iterate_over_darts(LCC& lcc) {
     One_dart_per_cell_range<d> vertices_range = lcc.one_dart_per_cell<d>();
 
     for(typename One_dart_per_cell_range<d>::iterator
-        start = vertices_range.begin(), 
-        end = vertices_range.end(); 
-        start != end;
+        start = vertices_range.begin();
+        start.cont();
         start++)
     {
         ;
@@ -73,13 +72,14 @@ void iterate_over_darts_concurrent(LCC& lcc) {
     LCC::One_dart_per_cell_range<d> vertices_range = lcc.one_dart_per_cell<d>();
 
     for(typename LCC::One_dart_per_cell_range<d>::iterator
-        start = vertices_range.begin(),
-        end = vertices_range.end();
+        start = vertices_range.begin(), end = vertices_range.end();
         start != end;
-        start++)
+        ++start)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
+    std::cout << "thread ending" << std::endl;
 }
 
 template <typename LCC>
@@ -157,6 +157,8 @@ void iterator_concurrent_compact_container() {
             if(threads[i].joinable())
                 threads[i].join();
         }
+
+        std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << std::endl;
     }
 
     for(int i = 0; i < NB_THREADS; i++)
