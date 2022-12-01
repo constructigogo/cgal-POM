@@ -1,5 +1,19 @@
 //#define CGAL_NO_ASSERTIONS
 
+//Oui ou non activer les messages de trace du code
+#define LOG 0
+
+#ifndef LOG
+    #define LOG_MESSAGE(x) compile error
+#else
+    #if LOG
+        #define LOG_MESSAGE(x) std::cout << x;
+    #else
+        #define LOG_MESSAGE(x)
+    #endif
+#endif
+
+
 #include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
 #include <CGAL/Generalized_map.h>
 #include <CGAL/Linear_cell_complex_constructors.h>
@@ -19,7 +33,7 @@
 //Si on répète 100 fois les itérations, on a 
 //beaucoup plus de chance de faire crasher 
 //le programme
-#define ITERATIONS 1
+#define ITERATIONS 10
 
 using namespace CGAL;
 
@@ -76,10 +90,10 @@ void iterate_over_darts_concurrent(LCC& lcc) {
         start != end;
         ++start)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100));//Timing différent pour tester
     }
 
-    std::cout << "thread ending" << std::endl;
+    LOG_MESSAGE("thread ending" << std::endl);
 }
 
 template <typename LCC>
