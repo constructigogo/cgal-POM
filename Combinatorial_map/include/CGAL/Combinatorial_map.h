@@ -1195,9 +1195,9 @@ public:
      */
     void free_mark(size_type amark) const
     {
-        g_mutex.lock();
+        CGAL_assertion( is_reserved(amark));
 
-        CGAL_assertion( is_reserved(amark) );
+        g_mutex.lock();
 
         if ( mnb_times_reserved_marks[amark]>1 )
         {
