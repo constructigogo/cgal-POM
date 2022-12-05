@@ -12,7 +12,7 @@
 #ifndef CGAL_COMBINATORIAL_MAP_STORAGES_H
 #define CGAL_COMBINATORIAL_MAP_STORAGES_H 1
 
-#include <CGAL/Combinatorial_map/internal/Combinatorial_map_concurrent_bitset.h>
+#include <CGAL/Combinatorial_map_concurrent_bitset.h>
 #include <CGAL/Compact_container.h>
 #include <CGAL/Concurrent_compact_container.h>
 #include <CGAL/Dart.h>

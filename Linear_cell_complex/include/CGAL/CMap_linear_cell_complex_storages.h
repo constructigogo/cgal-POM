@@ -16,7 +16,7 @@
 #include <CGAL/Concurrent_compact_container.h>
 #include <CGAL/Dart.h>
 #include <CGAL/Handle_hash_function.h>
-#include <CGAL/Combinatorial_map/internal/Combinatorial_map_concurrent_bitset.h>
+#include <CGAL/Combinatorial_map_concurrent_bitset.h>
 
 #include <boost/config.hpp>
 #if defined(BOOST_GCC)

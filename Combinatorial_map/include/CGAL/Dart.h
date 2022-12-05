@@ -12,7 +12,7 @@
 #ifndef CGAL_DART_H
 #define CGAL_DART_H 1
 
-#include <CGAL/Combinatorial_map/internal/Combinatorial_map_concurrent_bitset.h>
+#include <CGAL/Combinatorial_map_concurrent_bitset.h>
 #include <CGAL/assertions.h>
 #include <CGAL/tags.h>
 #include <CGAL/tuple.h>

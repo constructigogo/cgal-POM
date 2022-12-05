@@ -1,5 +1,17 @@
 #define CGAL_NO_ASSERTIONS
 
+#define LOG 0
+
+#ifndef LOG
+    #define LOG_MESSAGE(x) compile error
+#else
+    #if LOG
+        #define LOG_MESSAGE(x) x;
+    #else
+        #define LOG_MESSAGE(x)
+    #endif
+#endif
+
 #include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
 #include <CGAL/Generalized_map.h>
 #include <CGAL/Linear_cell_complex_constructors.h>

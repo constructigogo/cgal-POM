@@ -1,13 +1,13 @@
 //#define CGAL_NO_ASSERTIONS
 
 //Oui ou non activer les messages de trace du code
-#define LOG 0
+#define LOG 1
 
 #ifndef LOG
     #define LOG_MESSAGE(x) compile error
 #else
     #if LOG
-        #define LOG_MESSAGE(x) std::cout << x;
+        #define LOG_MESSAGE(x) x;
     #else
         #define LOG_MESSAGE(x)
     #endif
@@ -22,7 +22,7 @@
 #include <thread>
 
 //Nombre de threads qui vont parcourir la LCC en parallèle
-#define NB_THREADS 10
+#define NB_THREADS 15
 
 //Combien de fois on va répéter l'itération sur 
 //la LCC. Ce paramètre sert uniquement à avoir
@@ -33,7 +33,7 @@
 //Si on répète 100 fois les itérations, on a 
 //beaucoup plus de chance de faire crasher 
 //le programme
-#define ITERATIONS 10
+#define ITERATIONS 100000
 
 using namespace CGAL;
 
@@ -67,20 +67,6 @@ void iterate_over_darts(LCC& lcc) {
     }
 }
 
-//template<unsigned int d>
-//void iterate_over_darts_concurrent(ConcurrentItemsLCC& lcc) {
-//    ConcurrentItemsLCC::One_dart_per_cell_range<d> vertices_range = lcc.one_dart_per_cell<d>();
-
-//    for(typename ConcurrentItemsLCC::One_dart_per_cell_range<d>::iterator
-//        start = vertices_range.begin(),
-//        end = vertices_range.end();
-//        start != end;
-//        start++)
-//    {
-//        ;
-//    }
-//}
-
 template<unsigned int d>
 void iterate_over_darts_concurrent(LCC& lcc) {
     LCC::One_dart_per_cell_range<d> vertices_range = lcc.one_dart_per_cell<d>();
@@ -93,7 +79,7 @@ void iterate_over_darts_concurrent(LCC& lcc) {
         //std::this_thread::sleep_for(std::chrono::milliseconds(100));//Timing différent pour tester
     }
 
-    LOG_MESSAGE("thread ending" << std::endl);
+    LOG_MESSAGE(std::cout << "thread ending" << std::endl);
 }
 
 template <typename LCC>
@@ -172,7 +158,7 @@ void iterator_concurrent_compact_container() {
                 threads[i].join();
         }
 
-        std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << std::endl;
+        std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n" << std::endl;
     }
 
     for(int i = 0; i < NB_THREADS; i++)
