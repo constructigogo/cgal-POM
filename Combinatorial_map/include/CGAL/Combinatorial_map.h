@@ -1029,8 +1029,6 @@ public:
      */
     size_type get_new_mark() const
     {
-        g_mutex.lock();
-
         if (mnb_used_marks == NB_MARKS)
         {
             std::cerr << "Not enough Boolean marks: "
@@ -1039,6 +1037,7 @@ public:
             throw Exception_no_more_available_mark();
         }
 
+        g_mutex.lock();
         size_type m = mfree_marks_stack[mnb_used_marks];
         mused_marks_stack[mnb_used_marks] = m;
 
@@ -1047,9 +1046,10 @@ public:
 
         LOG_MESSAGE(std::cout << "used marks  [" << std::this_thread::get_id() << "]: " << mnb_used_marks << std::endl);
         ++mnb_used_marks;
+        g_mutex.unlock();
+
         CGAL_assertion(is_whole_map_unmarked(m));
 
-        g_mutex.unlock();
         return m;
     }
 

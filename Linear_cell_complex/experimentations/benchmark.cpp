@@ -20,7 +20,7 @@
 #include <chrono>
 #include <thread>
 
-#define BENCHMARK_ITERATIONS 1000
+#define BENCHMARK_ITERATIONS 1
 
 using namespace CGAL;
 
@@ -29,10 +29,20 @@ struct Concurrent_items : public Linear_cell_complex_min_items
   typedef CGAL::Tag_true Use_concurrent_container;
 };
 
-typedef Linear_cell_complex_for_combinatorial_map<3, 3, Linear_cell_complex_traits<3>, Concurrent_items> LCC;
+typedef Linear_cell_complex_for_combinatorial_map<3, 3, Linear_cell_complex_traits<3>, Concurrent_items> LCC_Concurrent;
+typedef Linear_cell_complex_for_combinatorial_map<3> LCC;
+
+template <unsigned int d>
+using One_dart_per_cell_range_concurrent = LCC_Concurrent::One_dart_per_cell_range<d>;
 
 template <unsigned int d>
 using One_dart_per_cell_range = LCC::One_dart_per_cell_range<d>;
+
+void import_bunny_into_lcc_concurrent(LCC_Concurrent& lcc) {
+    std::ifstream inputFile("../data/bunny00.off");
+
+    CGAL::import_from_polyhedron_3_flux<LCC_Concurrent>(lcc, inputFile);
+}
 
 void import_bunny_into_lcc(LCC& lcc) {
     std::ifstream inputFile("../data/bunny00.off");
@@ -40,16 +50,16 @@ void import_bunny_into_lcc(LCC& lcc) {
     CGAL::import_from_polyhedron_3_flux<LCC>(lcc, inputFile);
 }
 
-void benchmark_bunny_one_dart_per_cell_iterator()
+void benchmark_bunny_one_dart_per_cell_iterator_concurrent()
 {
-    LCC lcc;
-    import_bunny_into_lcc(lcc);
+    LCC_Concurrent lcc;
+    import_bunny_into_lcc_concurrent(lcc);
 
-    One_dart_per_cell_range<3> range = lcc.one_dart_per_cell<3>();
+    One_dart_per_cell_range_concurrent<1> range = lcc.one_dart_per_cell<1>();
 
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-        for(One_dart_per_cell_range<3>::iterator start = range.begin(), end = range.end();
+        for(One_dart_per_cell_range_concurrent<1>::iterator start = range.begin(), end = range.end();
             start != end; start++)
             ;
     }
@@ -60,9 +70,33 @@ void benchmark_bunny_one_dart_per_cell_iterator()
     std::cout << "Average duration: " << duration / (double)BENCHMARK_ITERATIONS << "ms" << std::endl;
 }
 
-BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(My_has_concurrent_tag, Use_concurrent_container, true)
+void benchmark_bunny_one_dart_per_cell_iterator()
+{
+    LCC lcc;
+    import_bunny_into_lcc(lcc);
+
+    One_dart_per_cell_range<1> range = lcc.one_dart_per_cell<1>();
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
+        for(One_dart_per_cell_range<1>::iterator start = range.begin(), end = range.end();
+            start != end; start++)
+            ;
+    }
+    auto stop= std::chrono::high_resolution_clock::now();
+
+    long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+    std::cout << "Total duration: " << duration << "ms" << std::endl;
+    std::cout << "Average duration: " << duration / (double)BENCHMARK_ITERATIONS << "ms" << std::endl;
+}
 
 int main()
 {
+    std::cout << "Non-concurrent: " << std::endl;
     benchmark_bunny_one_dart_per_cell_iterator();
+
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "Concurrent: " << std::endl;
+    benchmark_bunny_one_dart_per_cell_iterator_concurrent();
 }

@@ -1,7 +1,8 @@
 //#define CGAL_NO_ASSERTIONS
 
 //Oui ou non activer les messages de trace du code
-#define LOG 1
+#define LOG 0
+#define LOG2 0
 
 #ifndef LOG
     #define LOG_MESSAGE(x) compile error
@@ -13,6 +14,16 @@
     #endif
 #endif
 
+#ifndef LOG2
+    #define LOG_MESSAGE(x) compile error
+#else
+    #if LOG2
+        #define LOG_MESSAGE2(x) x
+    #else
+        #define LOG_MESSAGE2(x)
+    #endif
+#endif
+
 
 #include <CGAL/Linear_cell_complex_for_combinatorial_map.h>
 #include <CGAL/Generalized_map.h>
@@ -21,19 +32,14 @@
 
 #include <thread>
 
-//Nombre de threads qui vont parcourir la LCC en parallèle
+//How many threads in parallel will iterate over the LCC
 #define NB_THREADS 15
 
-//Combien de fois on va répéter l'itération sur 
-//la LCC. Ce paramètre sert uniquement à avoir
-//plus de chance de trouver une race condition
-//en lançant le programme 1 fois. Si on a que
-//une seule itération, même avec 10 threads, 
-//on est pas sûr que le programme crash. 
-//Si on répète 100 fois les itérations, on a 
-//beaucoup plus de chance de faire crasher 
-//le programme
-#define ITERATIONS 100000
+//How many times we're going to repeat the iteration
+//of all the threads over the same LCC. This increases
+//the chance of a concurrency between threads if the program
+//isn't thread-safe
+#define ITERATIONS 1000
 
 using namespace CGAL;
 
@@ -54,11 +60,10 @@ typedef LCC::Dart_descriptor Dart_descriptor;
 typedef LCC::Dart Dart;
 typedef LCC::Point Point;
 
-template <unsigned int d>
 void iterate_over_darts(LCC& lcc) {
-    One_dart_per_cell_range<d> vertices_range = lcc.one_dart_per_cell<d>();
+    One_dart_per_cell_range<1> vertices_range = lcc.one_dart_per_cell<1>();
 
-    for(typename One_dart_per_cell_range<d>::iterator
+    for(typename One_dart_per_cell_range<1>::iterator
         start = vertices_range.begin();
         start.cont();
         start++)
@@ -67,19 +72,20 @@ void iterate_over_darts(LCC& lcc) {
     }
 }
 
-template<unsigned int d>
+std::atomic<unsigned int> counter;
+std::array<std::stringstream, NB_THREADS * ITERATIONS> output_streams;
 void iterate_over_darts_concurrent(LCC& lcc) {
-    LCC::One_dart_per_cell_range<d> vertices_range = lcc.one_dart_per_cell<d>();
+    LCC::One_dart_per_cell_range dart_range = lcc.one_dart_per_cell<1>();
 
-    for(typename LCC::One_dart_per_cell_range<d>::iterator
-        start = vertices_range.begin(), end = vertices_range.end();
+    unsigned int stream_number = counter++;
+
+    for(typename LCC::One_dart_per_cell_range<1>::iterator
+        start = dart_range.begin(), end = dart_range.end();
         start != end;
         ++start)
     {
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));//Timing différent pour tester
+        output_streams[stream_number] << lcc.point((*start).get_f(0)) << std::endl;
     }
-
-    LOG_MESSAGE(std::cout << "thread ending" << std::endl);
 }
 
 template <typename LCC>
@@ -103,7 +109,7 @@ void iterator_compact_container() {
     {
         for(int i = 0; i < NB_THREADS; i++)
         {
-            threads[i] = std::thread(iterate_over_darts<1>, std::ref(lcc));
+            threads[i] = std::thread(iterate_over_darts, std::ref(lcc));
 
             //Si on décommente cette ligne, les deux
             //threads ne vont pas s'exécuter en parallèle
@@ -146,7 +152,7 @@ void iterator_concurrent_compact_container() {
     {
         for(int i = 0; i < NB_THREADS; i++)
         {
-            threads[i] = std::thread(iterate_over_darts_concurrent<1>, std::ref(lcc));
+            threads[i] = std::thread(iterate_over_darts_concurrent, std::ref(lcc));
 
             //threads[i].join();
         }
@@ -158,7 +164,7 @@ void iterator_concurrent_compact_container() {
                 threads[i].join();
         }
 
-        std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n" << std::endl;
+        LOG_MESSAGE(std::cout << "\n\n\n" << std::endl);
     }
 
     for(int i = 0; i < NB_THREADS; i++)
@@ -168,8 +174,25 @@ void iterator_concurrent_compact_container() {
     }
 }
 
+/**
+ * Checks whether or not the threads produced the same output
+ * while iterating over the LCC in parallel
+ */
+void check_output_equality() {
+    std::unordered_set<std::size_t> hash_set;
+
+    for(int i = 0; i < NB_THREADS * ITERATIONS; i++) {
+        hash_set.insert(std::hash<std::string>{}(output_streams[i].str()));
+    }
+
+    //If the hash set only contains 1 hash, this means that all the hashes
+    //of the files were the same
+    std::cout << (hash_set.size() == 1 ? "SUCCESS, all threads output the same result" : "FAILURE, all threads did not output the same result") << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
     //iterator_compact_container();
     iterator_concurrent_compact_container();
+    check_output_equality();
 }
