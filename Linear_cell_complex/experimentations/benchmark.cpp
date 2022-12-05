@@ -1,14 +1,21 @@
 #define CGAL_NO_ASSERTIONS
 
 #define LOG 0
+#define LOG2 0
 
-#ifndef LOG
-    #define LOG_MESSAGE(x) compile error
-#else
+#ifdef LOG
     #if LOG
         #define LOG_MESSAGE(x) x;
     #else
         #define LOG_MESSAGE(x)
+    #endif
+#endif
+
+#ifdef LOG2
+    #if LOG2
+        #define LOG_MESSAGE2(x) x
+    #else
+        #define LOG_MESSAGE2(x)
     #endif
 #endif
 

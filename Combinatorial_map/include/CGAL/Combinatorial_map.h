@@ -60,7 +60,7 @@ _Pragma("GCC diagnostic ignored \"-Warray-bounds\"")
 #endif
 
 #include <mutex>
-std::mutex g_mutex;
+std::mutex g_mutex = std::mutex();
 
 #include <cmath>
 #include <cstdint>
@@ -1037,6 +1037,7 @@ public:
             throw Exception_no_more_available_mark();
         }
 
+        LOG_MESSAGE(std::cout << "locking get new mark" << std::endl;);
         g_mutex.lock();
         size_type m = mfree_marks_stack[mnb_used_marks];
         mused_marks_stack[mnb_used_marks] = m;
@@ -1044,8 +1045,8 @@ public:
         mindex_marks[m] = mnb_used_marks.load();
         mnb_times_reserved_marks[m]=1;
 
-        LOG_MESSAGE(std::cout << "used marks  [" << std::this_thread::get_id() << "]: " << mnb_used_marks << std::endl);
         ++mnb_used_marks;
+        LOG_MESSAGE(std::cout << "unlocking get new mark" << std::endl;);
         g_mutex.unlock();
 
         CGAL_assertion(is_whole_map_unmarked(m));
@@ -1197,13 +1198,15 @@ public:
     {
         CGAL_assertion( is_reserved(amark));
 
-        g_mutex.lock();
 
         if ( mnb_times_reserved_marks[amark]>1 )
         {
             --mnb_times_reserved_marks[amark];
             return;
         }
+
+        LOG_MESSAGE(std::cout << "locking free mark" << std::endl;);
+        g_mutex.lock();
 
         unmark_all(amark);
 
@@ -1220,6 +1223,7 @@ public:
 
         mnb_times_reserved_marks[amark]=0;
 
+        LOG_MESSAGE(std::cout << "unlocking free mark" << std::endl;);
         g_mutex.unlock();
     }
 

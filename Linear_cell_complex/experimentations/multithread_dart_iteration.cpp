@@ -4,9 +4,7 @@
 #define LOG 0
 #define LOG2 0
 
-#ifndef LOG
-    #define LOG_MESSAGE(x) compile error
-#else
+#ifdef LOG
     #if LOG
         #define LOG_MESSAGE(x) x;
     #else
@@ -14,9 +12,7 @@
     #endif
 #endif
 
-#ifndef LOG2
-    #define LOG_MESSAGE(x) compile error
-#else
+#ifdef LOG2
     #if LOG2
         #define LOG_MESSAGE2(x) x
     #else
@@ -39,7 +35,7 @@
 //of all the threads over the same LCC. This increases
 //the chance of a concurrency between threads if the program
 //isn't thread-safe
-#define ITERATIONS 1000
+#define ITERATIONS 10000
 
 using namespace CGAL;
 
