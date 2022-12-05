@@ -16,9 +16,7 @@
 #include <CGAL/Generalized_map.h>
 #include <CGAL/Linear_cell_complex_constructors.h>
 #include <CGAL/Polyhedron_3_to_lcc.h>
-
-#include <chrono>
-#include <thread>
+#include <CGAL/Timer.h>
 
 #define BENCHMARK_ITERATIONS 1
 
@@ -57,17 +55,18 @@ void benchmark_bunny_one_dart_per_cell_iterator_concurrent()
 
     One_dart_per_cell_range_concurrent<1> range = lcc.one_dart_per_cell<1>();
 
-    auto start = std::chrono::high_resolution_clock::now();
+    Timer timer;
+    timer.start();
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
         for(One_dart_per_cell_range_concurrent<1>::iterator start = range.begin(), end = range.end();
-            start != end; start++)
+            start != end; start++) {
             ;
+        }
     }
-    auto stop= std::chrono::high_resolution_clock::now();
+    timer.stop();
 
-    long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
-    std::cout << "Total duration: " << duration << "ms" << std::endl;
-    std::cout << "Average duration: " << duration / (double)BENCHMARK_ITERATIONS << "ms" << std::endl;
+    std::cout << "Total duration: " << timer.time() * 1000 << "ms" << std::endl;
+    std::cout << "Average duration: " << timer.time() * 1000 / (double)BENCHMARK_ITERATIONS << "ms" << std::endl;
 }
 
 void benchmark_bunny_one_dart_per_cell_iterator()
@@ -77,26 +76,26 @@ void benchmark_bunny_one_dart_per_cell_iterator()
 
     One_dart_per_cell_range<1> range = lcc.one_dart_per_cell<1>();
 
-    auto start = std::chrono::high_resolution_clock::now();
+    Timer timer;
+    timer.start();
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
         for(One_dart_per_cell_range<1>::iterator start = range.begin(), end = range.end();
             start != end; start++)
             ;
     }
-    auto stop= std::chrono::high_resolution_clock::now();
+    timer.stop();
 
-    long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
-    std::cout << "Total duration: " << duration << "ms" << std::endl;
-    std::cout << "Average duration: " << duration / (double)BENCHMARK_ITERATIONS << "ms" << std::endl;
+    std::cout << "Total duration: " << timer.time() * 1000 << "ms" << std::endl;
+    std::cout << "Average duration: " << timer.time() * 1000 / (double)BENCHMARK_ITERATIONS << "ms" << std::endl;
 }
 
 int main()
 {
-    std::cout << "Non-concurrent: " << std::endl;
-    benchmark_bunny_one_dart_per_cell_iterator();
-
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "Concurrent: " << std::endl;
     benchmark_bunny_one_dart_per_cell_iterator_concurrent();
+
+    std::cout << "Non-concurrent: " << std::endl;
+    benchmark_bunny_one_dart_per_cell_iterator();
 }
