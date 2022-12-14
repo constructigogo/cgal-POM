@@ -25,7 +25,7 @@
 #include <CGAL/Polyhedron_3_to_lcc.h>
 #include <CGAL/Timer.h>
 
-#define BENCHMARK_ITERATIONS 1
+#define BENCHMARK_ITERATIONS 1000
 
 using namespace CGAL;
 
