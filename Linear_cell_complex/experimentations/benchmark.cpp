@@ -23,9 +23,12 @@
 #include <CGAL/Generalized_map.h>
 #include <CGAL/Linear_cell_complex_constructors.h>
 #include <CGAL/Polyhedron_3_to_lcc.h>
-#include <CGAL/Timer.h>
 
-#define BENCHMARK_ITERATIONS 1000
+#include <tbb/global_control.h>
+#include <tbb/info.h>
+#include <tbb/parallel_for.h>
+
+#define BENCHMARK_ITERATIONS 100
 
 using namespace CGAL;
 
@@ -43,7 +46,7 @@ using One_dart_per_cell_range_concurrent = LCC_Concurrent::One_dart_per_cell_ran
 template <unsigned int d>
 using One_dart_per_cell_range = LCC::One_dart_per_cell_range<d>;
 
-void import_bunny_into_lcc_concurrent(LCC_Concurrent& lcc) {
+void import_bunny_into_lcc(LCC_Concurrent& lcc) {
     std::ifstream inputFile("../data/bunny00.off");
 
     CGAL::import_from_polyhedron_3_flux<LCC_Concurrent>(lcc, inputFile);
@@ -58,22 +61,24 @@ void import_bunny_into_lcc(LCC& lcc) {
 void benchmark_bunny_one_dart_per_cell_iterator_concurrent()
 {
     LCC_Concurrent lcc;
-    import_bunny_into_lcc_concurrent(lcc);
+    import_bunny_into_lcc(lcc);
 
     One_dart_per_cell_range_concurrent<1> range = lcc.one_dart_per_cell<1>();
 
-    Timer timer;
-    timer.start();
+    auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
         for(One_dart_per_cell_range_concurrent<1>::iterator start = range.begin(), end = range.end();
             start != end; start++) {
             ;
         }
     }
-    timer.stop();
+    auto stop = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Total duration: " << timer.time() * 1000 << "ms" << std::endl;
-    std::cout << "Average duration: " << timer.time() * 1000 / (double)BENCHMARK_ITERATIONS << "ms" << std::endl;
+    double total = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+    double per_iteration = total / (double)BENCHMARK_ITERATIONS;
+
+    std::cout << "Total duration: " << total << "ms" << std::endl;
+    std::cout << "Average duration: " << per_iteration << "ms" << std::endl;
 }
 
 void benchmark_bunny_one_dart_per_cell_iterator()
@@ -83,26 +88,79 @@ void benchmark_bunny_one_dart_per_cell_iterator()
 
     One_dart_per_cell_range<1> range = lcc.one_dart_per_cell<1>();
 
-    Timer timer;
-    timer.start();
+    auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
         for(One_dart_per_cell_range<1>::iterator start = range.begin(), end = range.end();
             start != end; start++)
             ;
     }
-    timer.stop();
+    auto stop = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Total duration: " << timer.time() * 1000 << "ms" << std::endl;
-    std::cout << "Average duration: " << timer.time() * 1000 / (double)BENCHMARK_ITERATIONS << "ms" << std::endl;
+    double total = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+    double per_iteration = total / (double)BENCHMARK_ITERATIONS;
+
+    std::cout << "Total duration: " << total << "ms" << std::endl;
+    std::cout << "Average duration: " << per_iteration << "ms" << std::endl;
+}
+
+/**
+ * Parcours tous les darts du bunny mais en utilisant plusieurs threads pour que chaque thread parcours sa partie de la map
+ * et qu'on ait pontentiellement un speedup
+ **/
+void benchmark_bunny_map_parallel_speedup() {
+    LCC lcc;
+    import_bunny_into_lcc(lcc);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int iter = 0; iter < BENCHMARK_ITERATIONS; iter++) {
+        for (auto i = lcc.darts().begin(), end = lcc.darts().end(); i != end; ++i)
+        {
+            ;
+        }
+    }
+    auto stop = std::chrono::high_resolution_clock::now();
+
+    double total_sequential = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+    double per_iteration_sequential = total_sequential / (double)BENCHMARK_ITERATIONS;
+
+    std::cout << "Total duration sequential: " << total_sequential << "ms" << std::endl;
+    std::cout << "Average duration sequential: " << per_iteration_sequential << "ms" << std::endl << std::endl;
+
+
+
+
+    start = std::chrono::high_resolution_clock::now();
+    for (int iter = 0; iter < BENCHMARK_ITERATIONS; iter++) {
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, lcc.darts().size()), [&](const tbb::blocked_range<size_t> &r) {
+            for (auto i = r.begin(), end = r.end(); i != end; ++i)
+            {
+                ;
+            }
+        });
+    }
+    stop = std::chrono::high_resolution_clock::now();
+
+    double total_parallel = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+    double per_iteration_parallel = total_parallel / (double)BENCHMARK_ITERATIONS;
+
+    std::cout << "Total duration parallel: " << total_parallel << "ms" << std::endl;
+    std::cout << "Average duration parallel: " << per_iteration_parallel << "ms" << std::endl << std::endl;
+
+    std::cout << "Parallel over sequential speedup: " << per_iteration_sequential / per_iteration_parallel << std::endl;
 }
 
 int main()
 {
-    std::cout << std::endl;
-    std::cout << std::endl;
+    /*
     std::cout << "Concurrent: " << std::endl;
     benchmark_bunny_one_dart_per_cell_iterator_concurrent();
 
+    std::cout << "\n";
     std::cout << "Non-concurrent: " << std::endl;
     benchmark_bunny_one_dart_per_cell_iterator();
+    */
+
+    std::cout << "\n";
+    std::cout << "Parallel speedup benchmark..." << std::endl;
+    benchmark_bunny_map_parallel_speedup();
 }
