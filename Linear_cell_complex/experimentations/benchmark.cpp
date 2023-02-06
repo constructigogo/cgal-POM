@@ -152,11 +152,11 @@ void benchmark_bunny_map_parallel_speedup() {
 int main()
 {
     /*
-    std::cout << "Concurrent: " << std::endl;
+    std::cout << "Concurrent container: " << std::endl;
     benchmark_bunny_one_dart_per_cell_iterator_concurrent();
 
     std::cout << "\n";
-    std::cout << "Non-concurrent: " << std::endl;
+    std::cout << "Non-concurrent container: " << std::endl;
     benchmark_bunny_one_dart_per_cell_iterator();
     */
 

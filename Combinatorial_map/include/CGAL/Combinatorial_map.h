@@ -60,8 +60,6 @@ _Pragma("GCC diagnostic ignored \"-Warray-bounds\"")
 #endif
 
 #include <mutex>
-std::mutex g_mutex = std::mutex();
-
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -1038,7 +1036,7 @@ public:
         }
 
         LOG_MESSAGE(std::cout << "locking get new mark" << std::endl;);
-        g_mutex.lock();
+        m_mutex.lock();
         size_type m = mfree_marks_stack[mnb_used_marks];
         mused_marks_stack[mnb_used_marks] = m;
 
@@ -1047,7 +1045,7 @@ public:
 
         ++mnb_used_marks;
         LOG_MESSAGE(std::cout << "unlocking get new mark" << std::endl;);
-        g_mutex.unlock();
+        m_mutex.unlock();
 
         CGAL_assertion(is_whole_map_unmarked(m));
 
@@ -1206,7 +1204,7 @@ public:
         }
 
         LOG_MESSAGE(std::cout << "locking free mark" << std::endl;);
-        g_mutex.lock();
+        m_mutex.lock();
 
         unmark_all(amark);
 
@@ -1224,7 +1222,7 @@ public:
         mnb_times_reserved_marks[amark]=0;
 
         LOG_MESSAGE(std::cout << "unlocking free mark" << std::endl;);
-        g_mutex.unlock();
+        m_mutex.unlock();
     }
 
     template <unsigned int i, unsigned int d=dimension>
@@ -4784,6 +4782,9 @@ protected:
     /// Automatic management of the attributes:
     /// true means attributes are always maintained updated during operations.
     bool automatic_attributes_management;
+
+    /// Mutex used for the thread-safety of operations done on the map
+    mutable std::mutex m_mutex;
 
     /// Tuple of unary and binary functors (for all non void attributes).
     typename Helper::Split_functors m_onsplit_functors;
