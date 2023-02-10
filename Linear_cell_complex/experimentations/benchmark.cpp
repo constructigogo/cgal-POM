@@ -1,7 +1,7 @@
 #define CGAL_NO_ASSERTIONS
 
-#define LOG 0
-#define LOG2 0
+//#define LOG 0
+//#define LOG2 0
 
 #ifdef LOG
     #if LOG
