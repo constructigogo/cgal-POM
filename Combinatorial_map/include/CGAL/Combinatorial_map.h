@@ -82,6 +82,211 @@ auto CM_ADL_opposite(Desc&& d, G&& g) {
    * Definition of generic dD Combinatorial map.
    */
 
+/**
+ * Specialization of methods that need a mutex to be thread-safe
+ */
+//template <unsigned int d_, class Refs_, class Items_,
+//          class Alloc_, class Storage_>
+//struct Thread_safe_operations_common_
+//{
+//public:
+//    typedef Combinatorial_map_base<d_, Refs_, Items_,
+//            Alloc_, Storage_> Map_type;
+
+//    typedef typename Map_type::size_type size_type;
+
+//    size_t common_get_new_mark(const Map_type& amap) const {
+//        size_type m = amap.mfree_marks_stack[amap.mnb_used_marks];
+//        amap.mused_marks_stack[amap.mnb_used_marks] = m;
+
+//        amap.mindex_marks[m] = amap.mnb_used_marks.load();
+//        amap.mnb_times_reserved_marks[m] = 1;
+
+//        ++amap.mnb_used_marks;
+
+//        return m;
+//    }
+
+//    void common_free_mark(const Map_type& amap, size_t amark) const {
+//        amap.unmark_all(amark);
+
+//        // 1) We remove amark from the array mused_marks_stack by
+//        //    replacing it with the last mark in this array.
+//        amap.mused_marks_stack[amap.mindex_marks[amark]] =
+//                amap.mused_marks_stack[--amap.mnb_used_marks].load();
+//        amap.mindex_marks[amap.mused_marks_stack[amap.mnb_used_marks]] =
+//                amap.mindex_marks[amark].load();
+
+//        // 2) We add amark in the array mfree_marks_stack and update its index.
+//        amap.mfree_marks_stack[ amap.mnb_used_marks ] = amark;
+//        amap.mindex_marks[amark] = amap.mnb_used_marks.load();
+
+//        amap.mnb_times_reserved_marks[amark]=0;
+//    }
+//};
+
+//template<typename Concurrent_tag, unsigned int d_, class Refs_, class Items_,
+//         class Alloc_, class Storage_>
+//struct Thread_safe_operations_ : public Thread_safe_operations_common_
+//        <d_, Refs_, Items_, Alloc_, Storage_>
+//{
+//    typedef Thread_safe_operations_common_<d_, Refs_, Items_, Alloc_, Storage_> Common;
+//    typedef typename Common::Map_type Map_type;
+//    typedef typename Common::size_type size_type;
+
+//    using Common::common_get_new_mark;
+//    using Common::common_free_mark;
+
+//public:
+//    size_t get_new_mark(const Map_type& amap) const {
+//        std::cout << "get new mark\n";
+
+//        size_t m = common_get_new_mark(amap);
+
+//        CGAL_assertion(amap.is_whole_map_unmarked(m));
+
+//        return m;
+//    }
+
+//    void free_mark(const Map_type& amap, size_t amark) const {
+//        std::cout << "free mark\n";
+
+//        common_free_mark(amap, amark);
+//    }
+//};
+
+//template<unsigned int d_, class Refs_, class Items_,
+//         class Alloc_, class Storage_>
+//struct Thread_safe_operations_<CGAL::Tag_true, d_, Refs_, Items_, Alloc_, Storage_> : public Thread_safe_operations_common_
+//        <d_, Refs_, Items_, Alloc_, Storage_>
+//{
+//    typedef Thread_safe_operations_common_<d_, Refs_, Items_, Alloc_, Storage_> Common;
+//    typedef typename Common::Map_type Map_type;
+//    typedef typename Common::size_type size_type;
+
+//    using Common::common_get_new_mark;
+//    using Common::common_free_mark;
+
+//public:
+//    size_t get_new_mark(const Map_type& amap) const {
+//        std::cout << "get new mark mutex\n";
+//        m_mutex.lock();
+//        size_t m = common_get_new_mark(amap);
+//        m_mutex.unlock();
+
+//        CGAL_assertion(amap.is_whole_map_unmarked(m));
+
+//        return m;
+//    }
+
+//    void free_mark(const Map_type& amap, size_t amark) const {
+//        std::cout << "free mark mutex\n";
+//        m_mutex.lock();
+
+//        common_free_markk(amap, amark);
+
+//        m_mutex.unlock();
+//    }
+
+//private:
+//    mutable std::mutex m_mutex;
+//};
+
+template <class Map>
+struct Thread_safe_operations_common_
+{
+public:
+    typedef typename Map::size_type size_type;
+
+    size_t common_get_new_mark(const Map& amap) const {
+        size_type m = amap.mfree_marks_stack[amap.mnb_used_marks];
+        amap.mused_marks_stack[amap.mnb_used_marks] = m;
+
+        amap.mindex_marks[m] = amap.mnb_used_marks.load();
+        amap.mnb_times_reserved_marks[m] = 1;
+
+        ++amap.mnb_used_marks;
+
+        return m;
+    }
+
+    void common_free_mark(const Map& amap, size_t amark) const {
+        amap.unmark_all(amark);
+
+        // 1) We remove amark from the array mused_marks_stack by
+        //    replacing it with the last mark in this array.
+        amap.mused_marks_stack[amap.mindex_marks[amark]] =
+                amap.mused_marks_stack[--amap.mnb_used_marks].load();
+        amap.mindex_marks[amap.mused_marks_stack[amap.mnb_used_marks]] =
+                amap.mindex_marks[amark].load();
+
+        // 2) We add amark in the array mfree_marks_stack and update its index.
+        amap.mfree_marks_stack[ amap.mnb_used_marks ] = amark;
+        amap.mindex_marks[amark] = amap.mnb_used_marks.load();
+
+        amap.mnb_times_reserved_marks[amark]=0;
+    }
+};
+
+template<typename Concurrent_tag, class Map>
+struct Thread_safe_operations_ : public Thread_safe_operations_common_<Map>
+{
+    typedef Thread_safe_operations_common_<Map> Common;
+
+    typedef typename Map::size_type size_type;
+
+    using Common::common_get_new_mark;
+    using Common::common_free_mark;
+
+public:
+    size_t get_new_mark(const Map& amap) const {
+        size_t m = common_get_new_mark(amap);
+
+        CGAL_assertion(amap.is_whole_map_unmarked(m));
+
+        return m;
+    }
+
+    void free_mark(const Map& amap, size_t amark) const {
+        common_free_mark(amap, amark);
+    }
+};
+
+template<class Map>
+struct Thread_safe_operations_<CGAL::Tag_true, Map> : public Thread_safe_operations_common_<Map>
+{
+    typedef Thread_safe_operations_common_<Map> Common;
+
+    typedef typename Map::size_type size_type;
+
+    using Common::common_get_new_mark;
+    using Common::common_free_mark;
+
+public:
+    size_t get_new_mark(const Map& amap) const {
+        m_mutex.lock();
+
+        size_t m = common_get_new_mark(amap);
+
+        m_mutex.unlock();
+
+        CGAL_assertion(amap.is_whole_map_unmarked(m));
+
+        return m;
+    }
+
+    void free_mark(const Map& amap, size_t amark) const {
+        m_mutex.lock();
+
+        common_free_mark(amap, amark);
+
+        m_mutex.unlock();
+    }
+
+private:
+    mutable std::mutex m_mutex;
+};
+
 struct Combinatorial_map_tag {};
 struct Generalized_map_tag;
 
@@ -110,6 +315,8 @@ class Combinatorial_map_base: public Storage_
     friend struct internal::Init_attribute_functor;
     template<typename CMap>
     friend struct Swap_attributes_functor;
+    template<class Map>
+    friend struct Thread_safe_operations_common_;
 
 public:
     template < unsigned int A, class B, class I, class D, class S >
@@ -135,99 +342,7 @@ public:
     typedef typename Base::Use_index Use_index;
     typedef typename Base::Dart_range Dart_range;
     typedef typename Base::Dart_const_range Dart_const_range;
-
-    /**
-     * Specialization of methods that need a mutex to be thread-safe
-     */
-    struct Thread_safe_operations_common_
-    {
-    public:
-        size_t common_get_new_mark(const Self& amap) const {
-            size_type m = amap.mfree_marks_stack[amap.mnb_used_marks];
-            amap.mused_marks_stack[amap.mnb_used_marks] = m;
-
-            amap.mindex_marks[m] = amap.mnb_used_marks.load();
-            amap.mnb_times_reserved_marks[m] = 1;
-
-            ++amap.mnb_used_marks;
-
-            return m;
-        }
-
-        void common_free_mark(const Self& amap, size_t amark) const {
-            amap.unmark_all(amark);
-
-            // 1) We remove amark from the array mused_marks_stack by
-            //    replacing it with the last mark in this array.
-            amap.mused_marks_stack[amap.mindex_marks[amark]] =
-                    amap.mused_marks_stack[--amap.mnb_used_marks].load();
-            amap.mindex_marks[amap.mused_marks_stack[amap.mnb_used_marks]] =
-                    amap.mindex_marks[amark].load();
-
-            // 2) We add amark in the array mfree_marks_stack and update its index.
-            amap.mfree_marks_stack[ amap.mnb_used_marks ] = amark;
-            amap.mindex_marks[amark] = amap.mnb_used_marks.load();
-
-            amap.mnb_times_reserved_marks[amark]=0;
-        }
-    };
-
-    template<typename Concurrent_tag>
-    struct Thread_safe_operations_ : public Thread_safe_operations_common_
-    {
-        using Thread_safe_operations_common_::common_get_new_mark;
-        using Thread_safe_operations_common_::common_free_mark;
-
-    public:
-        size_t get_new_mark(const Self& amap) const {
-            std::cout << "get new mark\n";
-
-            size_t m = common_get_new_mark(amap);
-
-            CGAL_assertion(amap.is_whole_map_unmarked(m));
-
-            return m;
-        }
-
-        void free_mark(const Self& amap, size_t amark) const {
-            std::cout << "free mark\n";
-
-            common_free_mark(amap, amark);
-        }
-    };
-
-    template<>
-    struct Thread_safe_operations_<CGAL::Tag_true> : public Thread_safe_operations_common_
-    {
-        using Thread_safe_operations_common_::common_get_new_mark;
-        using Thread_safe_operations_common_::common_free_mark;
-
-    public:
-        size_t get_new_mark(const Self& amap) const {
-            std::cout << "get new mark mutex\n";
-            m_mutex.lock();
-            size_t m = common_get_new_mark(amap);
-            m_mutex.unlock();
-
-            CGAL_assertion(amap.is_whole_map_unmarked(m));
-
-            return m;
-        }
-
-        void free_mark(const Self& amap, size_t amark) const {
-            std::cout << "free mark mutex\n";
-            m_mutex.lock();
-
-            common_free_markk(amap, amark);
-
-            m_mutex.unlock();
-        }
-
-    private:
-        mutable std::mutex m_mutex;
-    };
-
-    typedef Thread_safe_operations_<typename Base::Concurrent_tag> Thread_safe_operations;
+    typedef Thread_safe_operations_<typename Base::Concurrent_tag, Self> Thread_safe_operations;
 
     static const size_type NB_MARKS = Base::NB_MARKS;
     static const size_type INVALID_MARK = NB_MARKS;
