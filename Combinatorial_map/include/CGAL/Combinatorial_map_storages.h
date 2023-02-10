@@ -33,6 +33,9 @@ namespace CGAL {
 
     template<typename Concurrent_tag, class T, class Alloc_>
     struct Container_type;
+
+    template<typename Concurrent_tag, size_t N>
+    struct Bitset_type;
   }
 
   // Storage of darts with compact container, beta with handles
@@ -60,9 +63,9 @@ namespace CGAL {
     typedef typename internal::Container_type
                  <Concurrent_tag, Dart, Dart_allocator>::type Dart_container;
 
-    typedef typename Dart_container::iterator              Dart_descriptor;
-    typedef typename Dart_container::const_iterator        Dart_const_descriptor;
-    typedef typename Dart_container::size_type             size_type;
+    typedef typename Dart_container::iterator                   Dart_descriptor;
+    typedef typename Dart_container::const_iterator             Dart_const_descriptor;
+    typedef typename Dart_container::size_type                  size_type;
 
     typedef std::nullptr_t Null_descriptor_type;
     CGAL_CPP17_INLINE static constexpr Null_descriptor_type null_descriptor=nullptr;
@@ -112,6 +115,7 @@ namespace CGAL {
 
     /// Number of marks
     static const size_type NB_MARKS = 32;
+    typedef typename internal::Bitset_type<Concurrent_tag, NB_MARKS>::type Bitset_type;
 
     /// The dimension of the combinatorial map.
     static const unsigned int dimension = d_;
@@ -173,13 +177,13 @@ namespace CGAL {
 
     /// Set simultaneously all the marks of this dart to a given value.
     void set_dart_marks(Dart_const_descriptor ADart,
-                        const AtomicBitset<NB_MARKS>& amarks) const
+                        const Bitset_type& amarks) const
     {
       CGAL_assertion( ADart!=nullptr );
       ADart->set_marks(amarks);
     }
     /// Return all the marks of a dart.
-    AtomicBitset<NB_MARKS> get_dart_marks(Dart_const_descriptor ADart) const
+    Bitset_type get_dart_marks(Dart_const_descriptor ADart) const
     {
       CGAL_assertion( ADart!=nullptr );
       return ADart->get_marks();

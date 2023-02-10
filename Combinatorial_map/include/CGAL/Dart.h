@@ -112,6 +112,7 @@ namespace CGAL {
     friend struct internal::Init_id;
 
     typedef Dart_without_info<d,Refs, WithId>    Self;
+    typedef typename Refs::Bitset_type           Bitset_type;
     typedef typename Refs::Dart_descriptor       Dart_descriptor;
     typedef typename Refs::size_type             size_type;
     typedef typename Refs::Dart_const_descriptor Dart_const_descriptor;
@@ -214,13 +215,13 @@ namespace CGAL {
     /** Return all the marks of this dart.
      * @return the marks.
      */
-     AtomicBitset<NB_MARKS> get_marks() const
+     Bitset_type get_marks() const
     { return mmarks; }
 
     /** Set simultaneously all the marks of this dart to a given value.
      * @param amarks the value of the marks.
      */
-     void set_marks(const AtomicBitset<NB_MARKS>& amarks) const
+     void set_marks(const Bitset_type& amarks) const
     { mmarks = amarks; }
 
     /// @return a descriptor on the i-attribute
@@ -246,7 +247,7 @@ namespace CGAL {
     Dart_descriptor mf[dimension+1];
 
     /// Values of Boolean marks.
-    mutable AtomicBitset<NB_MARKS> mmarks;
+    mutable Bitset_type mmarks;
 
     /// Attributes enabled
     typename Helper::Attribute_descriptors mattribute_descriptors;

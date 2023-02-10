@@ -15,6 +15,7 @@
 #include <CGAL/tuple.h>
 #include <CGAL/Compact_container.h>
 #include <CGAL/Concurrent_compact_container.h>
+#include <CGAL/Combinatorial_map_concurrent_bitset.h>
 #include <iostream>
 #include <cstdint>
 #include <type_traits>
@@ -633,10 +634,25 @@ namespace CGAL
   {
     typedef CGAL::Compact_container<T, Alloc_> type;
   };
+
   template<class T, class Alloc_>
   struct Container_type<CGAL::Tag_true, T, Alloc_>
   {
     typedef CGAL::Concurrent_compact_container<T, Alloc_> type;
+  };
+
+
+  // Helper class to define the bitset type depending on the Concurrent_tag
+  template<typename Concurrent_tag, size_t N>
+  struct Bitset_type
+  {
+    typedef std::bitset<N> type;
+  };
+
+  template<size_t N>
+  struct Bitset_type<CGAL::Tag_true, N>
+  {
+    typedef AtomicBitset<N> type;
   };
 
 } //namespace internal

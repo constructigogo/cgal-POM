@@ -126,6 +126,7 @@ public:
     typedef typename Base::Dart_descriptor Dart_descriptor;
     typedef typename Base::Dart_const_descriptor Dart_const_descriptor;
     typedef typename Base::Dart_container Dart_container;
+    typedef typename Base::Bitset_type Bitset_type;
     typedef typename Base::size_type size_type;
     typedef typename Base::Helper Helper;
     typedef typename Base::Attributes Attributes;
@@ -165,7 +166,6 @@ public:
     using Base::is_empty;
     using Base::upper_bound_on_dart_ids;
     using Base::upper_bound_on_attribute_ids;
-
     /// Typedef for attributes
     template<int i>
     struct Attribute_type: public Base::template Attribute_type<i>
@@ -878,7 +878,7 @@ protected:
     // Initialize a given dart: all beta to null_dart_descriptor and all
     // attributes to null, marks are given.
     void init_dart(Dart_descriptor adart,
-                   const AtomicBitset<NB_MARKS>& amarks)
+                   const Bitset_type& amarks)
     {
         set_marks(adart, amarks);
 
@@ -2741,14 +2741,14 @@ protected:
      * @param amarks the marks to set.
      */
     void set_marks(Dart_const_descriptor adart,
-                   const AtomicBitset<NB_MARKS>& amarks) const
+                   const Bitset_type& amarks) const
     { set_dart_marks(adart, amarks ^ mmask_marks); }
 
     /** Get simultaneously all the marks of a given dart.
      * @param adart the dart.
      * @return allt the marks of adart.
      */
-    AtomicBitset<NB_MARKS> get_marks(Dart_const_descriptor adart) const
+    Bitset_type get_marks(Dart_const_descriptor adart) const
     { return get_dart_marks(adart) ^ mmask_marks; }
 
     /** Get the mask associated to a given mark.
@@ -4762,7 +4762,7 @@ protected:
     mutable std::atomic<size_type> mnb_times_reserved_marks[NB_MARKS];
 
     /// Mask marks to know the value of unmark dart, for each index i.
-    mutable AtomicBitset<NB_MARKS> mmask_marks;
+    mutable Bitset_type mmask_marks;
 
     /// Number of used marks.
     mutable std::atomic<size_type> mnb_used_marks;
