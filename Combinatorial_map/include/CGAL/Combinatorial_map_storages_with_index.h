@@ -34,6 +34,9 @@ namespace CGAL {
 
     template<typename Concurrent_tag, size_t N>
     struct Bitset_type;
+
+    template<typename Concurrent_tag, typename base_type>
+    struct Thread_safe_type;
   }
 
   // Storage with combinatorial maps using index
@@ -117,6 +120,8 @@ namespace CGAL {
     /// Number of marks
     static const size_type NB_MARKS = 32;
     typedef typename internal::Bitset_type<Concurrent_tag, NB_MARKS>::type Bitset_type;
+    typedef typename internal::Thread_safe_type<Concurrent_tag, size_type>::type Thread_safe_type;
+    typedef typename internal::Thread_safe_type<Concurrent_tag, size_type>::base Thread_safe_type_base;
 
     /// The dimension of the combinatorial map.
     static const unsigned int dimension = d_;

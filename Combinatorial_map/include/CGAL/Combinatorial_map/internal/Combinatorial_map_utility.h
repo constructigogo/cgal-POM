@@ -655,6 +655,22 @@ namespace CGAL
     typedef AtomicBitset<N> type;
   };
 
+  // Helper class to define the type of the member
+  // attributes of a Combinatorial_map depending on the Concurrent_tag
+  template<typename Concurrent_tag, typename base_type>
+  struct Thread_safe_type
+  {
+    typedef base_type type;
+    typedef base_type base;
+  };
+
+  template<typename base_type>
+  struct Thread_safe_type<CGAL::Tag_true, base_type>
+  {
+    typedef std::atomic<base_type> type;
+    typedef base_type base;
+  };
+
 } //namespace internal
 
 } //namespace CGAL

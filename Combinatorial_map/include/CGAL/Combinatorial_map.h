@@ -88,22 +88,40 @@ auto CM_ADL_opposite(Desc&& d, G&& g) {
 template<typename Concurrent_tag, class Map>
 struct Thread_safe_operations_
 {
+    typedef typename Map::Thread_safe_type Thread_safe_type;
+    typedef typename Map::Thread_safe_type_base Thread_safe_type_base;
+
 public:
     //Nothing to be done in the non-concurrent case
-    void lock() const {}
-    void unlock() const {}
+    inline void lock() const {}
+    inline void unlock() const {}
+
+    inline Thread_safe_type_base get_value(const Thread_safe_type& value) const
+    {
+        return value;
+    }
 };
 
 template<class Map>
 struct Thread_safe_operations_<CGAL::Tag_true, Map>
 {
+    typedef typename Map::Thread_safe_type Thread_safe_type;
+    typedef typename Map::Thread_safe_type_base Thread_safe_type_base;
+
 public:
-    void lock() const {
+    inline void lock() const
+    {
         m_mutex.lock();
     }
 
-    void unlock() const {
+    inline void unlock() const
+    {
         m_mutex.unlock();
+    }
+
+    inline Thread_safe_type_base get_value(const Thread_safe_type& value) const
+    {
+        return value.load();
     }
 
 private:
@@ -155,6 +173,8 @@ public:
     typedef typename Base::Dart_const_descriptor Dart_const_descriptor;
     typedef typename Base::Dart_container Dart_container;
     typedef typename Base::Bitset_type Bitset_type;
+    typedef typename Base::Thread_safe_type Thread_safe_type;
+    typedef typename Base::Thread_safe_type_base Thread_safe_type_base;
     typedef typename Base::size_type size_type;
     typedef typename Base::Helper Helper;
     typedef typename Base::Attributes Attributes;
@@ -1069,7 +1089,7 @@ public:
         size_type m = mfree_marks_stack[mnb_used_marks];
         mused_marks_stack[mnb_used_marks] = m;
 
-        mindex_marks[m] = mnb_used_marks.load();
+        mindex_marks[m] = ts_operations.get_value(mnb_used_marks);
         mnb_times_reserved_marks[m] = 1;
 
         ++mnb_used_marks;
@@ -1237,14 +1257,12 @@ public:
 
         // 1) We remove amark from the array mused_marks_stack by
         //    replacing it with the last mark in this array.
-        mused_marks_stack[mindex_marks[amark]] =
-                mused_marks_stack[--mnb_used_marks].load();
-        mindex_marks[mused_marks_stack[mnb_used_marks]] =
-                mindex_marks[amark].load();
+        mused_marks_stack[mindex_marks[amark]] = ts_operations.get_value(mused_marks_stack[--mnb_used_marks]);
+        mindex_marks[mused_marks_stack[mnb_used_marks]] = ts_operations.get_value(mindex_marks[amark]);
 
         // 2) We add amark in the array mfree_marks_stack and update its index.
         mfree_marks_stack[ mnb_used_marks ] = amark;
-        mindex_marks[amark] = mnb_used_marks.load();
+        mindex_marks[amark] = ts_operations.get_value(mnb_used_marks);
 
         mnb_times_reserved_marks[amark]=0;
 
@@ -4785,25 +4803,25 @@ public:
 
 protected:
     /// Number of times each mark is reserved. 0 if the mark is free.
-    mutable std::atomic<size_type> mnb_times_reserved_marks[NB_MARKS];
+    mutable Thread_safe_type mnb_times_reserved_marks[NB_MARKS];
 
     /// Mask marks to know the value of unmark dart, for each index i.
     mutable Bitset_type mmask_marks;
 
     /// Number of used marks.
-    mutable std::atomic<size_type> mnb_used_marks;
+    mutable Thread_safe_type mnb_used_marks;
 
     /// Index of each mark, in mfree_marks_stack or in mfree_marks_stack.
-    mutable std::atomic<size_type> mindex_marks[NB_MARKS];
+    mutable Thread_safe_type mindex_marks[NB_MARKS];
 
     /// "Stack" of free marks.
-    mutable std::atomic<size_type> mfree_marks_stack[NB_MARKS];
+    mutable Thread_safe_type mfree_marks_stack[NB_MARKS];
 
     /// "Stack" of used marks.
-    mutable std::atomic<size_type> mused_marks_stack[NB_MARKS];
+    mutable Thread_safe_type mused_marks_stack[NB_MARKS];
 
     /// Number of marked darts for each used marks.
-    mutable std::atomic<size_type> mnb_marked_darts[NB_MARKS];
+    mutable Thread_safe_type mnb_marked_darts[NB_MARKS];
 
     /// Automatic management of the attributes:
     /// true means attributes are always maintained updated during operations.
