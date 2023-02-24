@@ -167,9 +167,14 @@ namespace CGAL {
      * @param adart a dart.
      */
     Dart_without_info(const Dart_without_info& other) :
-      mmarks(other.mmarks),
       mattribute_descriptors(other.mattribute_descriptors)
     {
+      for (unsigned int i = 0; i < NB_MARKS; i++)
+      {
+          if(other.mmarks[i]) mmarks.set(i);
+          else mmarks.reset(i);
+      }
+
       for (unsigned int i=0; i<=dimension; ++i)
       { mf[i]=other.mf[i]; }
     }
