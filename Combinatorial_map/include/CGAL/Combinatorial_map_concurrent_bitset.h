@@ -235,8 +235,6 @@ private:
     std::array<AtomicBlockType, kNumBlocks> data_;
 };
 
-int count = 0;
-
 // value-initialize to zero
 template <size_t N>
 inline AtomicBitset<N>::AtomicBitset() : data_() {}
