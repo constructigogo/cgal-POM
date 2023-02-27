@@ -86,7 +86,7 @@ auto CM_ADL_opposite(Desc&& d, G&& g) {
  * Specialization of methods that need a mutex to be thread-safe
  */
 template<typename Concurrent_tag, class Map>
-struct Thread_safe_operations_
+struct Map_thread_safe_operations_
 {
     typedef typename Map::Thread_safe_type Thread_safe_type;
     typedef typename Map::Thread_safe_type_base Thread_safe_type_base;
@@ -103,7 +103,7 @@ public:
 };
 
 template<class Map>
-struct Thread_safe_operations_<CGAL::Tag_true, Map>
+struct Map_thread_safe_operations_<CGAL::Tag_true, Map>
 {
     typedef typename Map::Thread_safe_type Thread_safe_type;
     typedef typename Map::Thread_safe_type_base Thread_safe_type_base;
@@ -184,7 +184,7 @@ public:
     typedef typename Base::Dart_range Dart_range;
     typedef typename Base::Dart_const_range Dart_const_range;
 
-    typedef Thread_safe_operations_<typename Base::Concurrent_tag, Self> Thread_safe_operations;
+    typedef Map_thread_safe_operations_<typename Base::Concurrent_tag, Self> Map_operations;
 
     static const size_type NB_MARKS = Base::NB_MARKS;
     static const size_type INVALID_MARK = NB_MARKS;
@@ -1085,15 +1085,15 @@ public:
             throw Exception_no_more_available_mark();
         }
 
-        ts_operations.lock();
+        m_operations.lock();
         size_type m = mfree_marks_stack[mnb_used_marks];
         mused_marks_stack[mnb_used_marks] = m;
 
-        mindex_marks[m] = ts_operations.get_value(mnb_used_marks);
+        mindex_marks[m] = m_operations.get_value(mnb_used_marks);
         mnb_times_reserved_marks[m] = 1;
 
         ++mnb_used_marks;
-        ts_operations.unlock();
+        m_operations.unlock();
 
         CGAL_assertion(is_whole_map_unmarked(m));
 
@@ -1251,22 +1251,22 @@ public:
             return;
         }
 
-        ts_operations.lock();
+        m_operations.lock();
 
         unmark_all(amark);
 
         // 1) We remove amark from the array mused_marks_stack by
         //    replacing it with the last mark in this array.
-        mused_marks_stack[mindex_marks[amark]] = ts_operations.get_value(mused_marks_stack[--mnb_used_marks]);
-        mindex_marks[mused_marks_stack[mnb_used_marks]] = ts_operations.get_value(mindex_marks[amark]);
+        mused_marks_stack[mindex_marks[amark]] = m_operations.get_value(mused_marks_stack[--mnb_used_marks]);
+        mindex_marks[mused_marks_stack[mnb_used_marks]] = m_operations.get_value(mindex_marks[amark]);
 
         // 2) We add amark in the array mfree_marks_stack and update its index.
         mfree_marks_stack[ mnb_used_marks ] = amark;
-        mindex_marks[amark] = ts_operations.get_value(mnb_used_marks);
+        mindex_marks[amark] = m_operations.get_value(mnb_used_marks);
 
         mnb_times_reserved_marks[amark]=0;
 
-        ts_operations.unlock();
+        m_operations.unlock();
     }
 
     template <unsigned int i, unsigned int d=dimension>
@@ -4827,8 +4827,9 @@ protected:
     /// true means attributes are always maintained updated during operations.
     bool automatic_attributes_management;
 
-    /// Mutex used for the thread-safety of operations done on the map
-    mutable Thread_safe_operations ts_operations;
+    /// Specializes operations done on the map for thread-safety depending on the
+    /// concurrent tag
+    mutable Map_operations m_operations;
 
     /// Tuple of unary and binary functors (for all non void attributes).
     typename Helper::Split_functors m_onsplit_functors;

@@ -152,7 +152,7 @@ public:
 #ifdef CMAP_WITH_INDEX
   using Use_index=CGAL::Tag_true;
 
-  //typedef CGAL::Tag_true Use_concurrent_container;
+  typedef CGAL::Tag_true Use_concurrent_container;
 #endif // CMAP_WITH_INDEX
 
   template < class Refs >
