@@ -94,6 +94,16 @@ namespace CGAL
     struct Get_concurrent_tag<T, true>
     { typedef CGAL::Tag_true type; };
 
+    // Get the atomic bitset tag (whether or not to use the atomic bitset
+    // when using the Concurrent_tag
+    BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_char_bitset_tag,Use_atomic_bitset,false)
+    template<typename T, bool typedefined=Has_char_bitset_tag<T>::value >
+    struct Get_char_bitset_tag
+    { typedef CGAL::Tag_false type; };
+    template<typename T>
+    struct Get_char_bitset_tag<T, true>
+    { typedef CGAL::Tag_true type; };
+
     // Convert a tuple in a same tuple where each void type was replaced into
     // CGAL::Void.
     template<typename ... Items>
@@ -643,16 +653,33 @@ namespace CGAL
 
 
   // Helper class to define the bitset type depending on the Concurrent_tag
-  template<typename Concurrent_tag, size_t N>
+  template<typename Concurrent_tag, typename Char_bitset_tag, size_t N>
   struct Bitset_type
   {
     typedef std::bitset<N> type;
   };
 
-  template<size_t N>
-  struct Bitset_type<CGAL::Tag_true, N>
+  // Specialization when using the Concurrent_tag but not the CharBitset
+  template<typename Char_bitset_tag, size_t N>
+  struct Bitset_type<CGAL::Tag_true, Char_bitset_tag, N>
   {
     typedef AtomicBitset<N> type;
+  };
+
+  // Specialization when the Concurrent_tag has been forgotten but the
+  // Char_bitset_tag is nonetheless specified
+  template<size_t N>
+  struct Bitset_type<CGAL::Tag_false, CGAL::Tag_true, N>
+  {
+    typedef std::bitset<N> type;
+  };
+
+  // Specialization when using the Concurrent_tag and the CharBitset
+  template<size_t N>
+  struct Bitset_type<CGAL::Tag_true, CGAL::Tag_true, N>
+  {
+    typedef std::bitset<N> type;//TODO remove this line, it's just a placeholder
+    //typedef CharBitset<N> type;// TODO decomment this line
   };
 
   // Helper class to define the type of the member
