@@ -16,6 +16,7 @@
 #include <CGAL/Compact_container.h>
 #include <CGAL/Concurrent_compact_container.h>
 #include <CGAL/Combinatorial_map_concurrent_bitset.h>
+#include <CGAL/Combinatorial_map_concurrent_charbitset.h>
 #include <iostream>
 #include <cstdint>
 #include <type_traits>
@@ -96,7 +97,7 @@ namespace CGAL
 
     // Get the atomic bitset tag (whether or not to use the atomic bitset
     // when using the Concurrent_tag
-    BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_char_bitset_tag,Use_atomic_bitset,false)
+    BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_char_bitset_tag,Use_char_bitset,false)
     template<typename T, bool typedefined=Has_char_bitset_tag<T>::value >
     struct Get_char_bitset_tag
     { typedef CGAL::Tag_false type; };
@@ -678,8 +679,8 @@ namespace CGAL
   template<size_t N>
   struct Bitset_type<CGAL::Tag_true, CGAL::Tag_true, N>
   {
-    typedef std::bitset<N> type;//TODO remove this line, it's just a placeholder
-    //typedef CharBitset<N> type;// TODO decomment this line
+    //typedef std::bitset<N> type;//TODO remove this line, it's just a placeholder
+    typedef CharBitset<N> type;// TODO decomment this line
   };
 
   // Helper class to define the type of the member
