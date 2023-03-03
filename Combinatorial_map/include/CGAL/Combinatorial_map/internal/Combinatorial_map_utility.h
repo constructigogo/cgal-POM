@@ -17,8 +17,9 @@
 #include <CGAL/Concurrent_compact_container.h>
 #include <CGAL/Combinatorial_map_atomic_bitset.h>
 #include <CGAL/Combinatorial_map_charbitset.h>
-#include <iostream>
+#include <bitset>
 #include <cstdint>
+#include <iostream>
 #include <type_traits>
 
 #include <boost/function.hpp>

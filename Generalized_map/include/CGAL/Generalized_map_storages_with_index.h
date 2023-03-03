@@ -30,6 +30,12 @@ namespace CGAL {
 
     template<typename Concurrent_tag, class T, class Alloc_>
     struct Container_type;
+
+    template<typename Concurrent_tag, typename Char_bitset_tag, size_t N>
+    struct Bitset_type;
+
+    template<typename Concurrent_tag, typename base_type>
+    struct Thread_safe_type;
   }
 
   // Storage of darts with compact container, alpha with indices
@@ -40,6 +46,7 @@ namespace CGAL {
     using Self=Generalized_map_storage_with_index<d_, Items_, Alloc_>;
     using Use_index=CGAL::Tag_true;
     using Concurrent_tag=typename internal::Get_concurrent_tag<Items_>::type;
+    using Char_bitset_tag=typename internal::Get_char_bitset_tag<Items_>::type;
 
     typedef internal::Combinatorial_map_helper<Self> Helper;
 
@@ -112,6 +119,9 @@ namespace CGAL {
 
     /// Number of marks
     static const size_type NB_MARKS = 32;
+    typedef typename internal::Bitset_type<Concurrent_tag, Char_bitset_tag, NB_MARKS>::type Bitset_type;
+    typedef typename internal::Thread_safe_type<Concurrent_tag, size_type>::type Thread_safe_type;
+    typedef typename internal::Thread_safe_type<Concurrent_tag, size_type>::base Thread_safe_type_base;
 
     /// The dimension of the generalized map.
     static const unsigned int dimension = d_;
@@ -165,12 +175,12 @@ namespace CGAL {
 
     /// Set simultaneously all the marks of this dart to a given value.
     void set_dart_marks(Dart_const_descriptor ADart,
-                        const std::bitset<NB_MARKS>& amarks) const
+                        const Bitset_type& amarks) const
     {
       mdarts[ADart].set_marks(amarks);
     }
     /// Return all the marks of a dart.
-    std::bitset<NB_MARKS> get_dart_marks(Dart_const_descriptor ADart) const
+    Bitset_type get_dart_marks(Dart_const_descriptor ADart) const
     {
       return mdarts[ADart].get_marks();
     }
