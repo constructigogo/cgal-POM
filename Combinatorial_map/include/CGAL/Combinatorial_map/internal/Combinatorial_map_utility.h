@@ -15,8 +15,8 @@
 #include <CGAL/tuple.h>
 #include <CGAL/Compact_container.h>
 #include <CGAL/Concurrent_compact_container.h>
-#include <CGAL/Combinatorial_map_concurrent_bitset.h>
-#include <CGAL/Combinatorial_map_concurrent_charbitset.h>
+#include <CGAL/Combinatorial_map_atomic_bitset.h>
+#include <CGAL/Combinatorial_map_charbitset.h>
 #include <iostream>
 #include <cstdint>
 #include <type_traits>

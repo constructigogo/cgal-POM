@@ -22,7 +22,7 @@
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_group_functors.h>
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_copy_functors.h>
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_sewable.h>
-#include <CGAL/Combinatorial_map_concurrent_bitset.h>
+#include <CGAL/Combinatorial_map_atomic_bitset.h>
 
 #include <CGAL/Combinatorial_map_storages.h>
 #include <CGAL/Combinatorial_map_storages_with_index.h>
