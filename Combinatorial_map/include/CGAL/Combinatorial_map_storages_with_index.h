@@ -12,7 +12,6 @@
 #ifndef CGAL_COMBINATORIAL_MAP_STORAGES_WITH_INDEX_H
 #define CGAL_COMBINATORIAL_MAP_STORAGES_WITH_INDEX_H 1
 
-#include <CGAL/Combinatorial_map_atomic_bitset.h>
 #include <CGAL/Compact_container_with_index.h>
 #include <CGAL/Dart.h>
 #include <bitset>

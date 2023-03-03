@@ -12,7 +12,6 @@
 #ifndef CGAL_DART_H
 #define CGAL_DART_H 1
 
-#include <CGAL/Combinatorial_map_atomic_bitset.h>
 #include <CGAL/assertions.h>
 #include <CGAL/tags.h>
 #include <CGAL/tuple.h>
