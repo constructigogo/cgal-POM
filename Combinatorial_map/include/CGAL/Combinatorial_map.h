@@ -242,6 +242,8 @@ public:
      */
     Combinatorial_map_base()
     {
+        std::cout << sizeof(Dart) << std::endl;
+
         CGAL_static_assertion_msg(Helper::nb_attribs<=dimension+1,
                                   "Too many attributes in the tuple Attributes_enabled");
         this->init_storage();

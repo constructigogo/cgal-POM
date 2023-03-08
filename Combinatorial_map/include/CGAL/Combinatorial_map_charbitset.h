@@ -22,7 +22,7 @@ public:
 
     std::mutex mtx;
 
-    CharBitset(const CharBitset&) = delete;
+    CharBitset(const CharBitset&);
     CharBitset& operator=(const CharBitset& rhs);
 
     void reset();
@@ -45,6 +45,15 @@ template <size_t N>
 inline CharBitset<N>::CharBitset() : data_() {
     for (auto & val : data_) {
         val = false;
+    }
+}
+
+template <size_t N>
+inline CharBitset<N>::CharBitset(const CharBitset& other)
+{
+    for (int i = 0; i < N; i++)
+    {
+        data_[i] = other.data_[i];
     }
 }
 

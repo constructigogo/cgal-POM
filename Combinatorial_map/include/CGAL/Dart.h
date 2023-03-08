@@ -63,36 +63,6 @@ namespace CGAL {
    * Definition of nD dart.
    */
 
-  /**
-   * Specialization of methods that are different in the concurrent
-   * and non-concurrent case
-   */
-  template<typename Concurrent_tag, class Dart>
-  struct Dart_operations_
-  {
-      typedef typename Dart::Bitset_type Bitset_type;
-
-  public:
-      void copy_marks(const Bitset_type& from, Bitset_type& to) const
-      { to = from; }
-  };
-
-  template<class Dart>
-  struct Dart_operations_<CGAL::Tag_true, Dart>
-  {
-      typedef typename Dart::Bitset_type Bitset_type;
-
-  public:
-      void copy_marks(const Bitset_type& from, Bitset_type& to) const
-      {
-          for (unsigned int i = 0; i < Dart::NB_MARKS; i++)
-          {
-              if(from[i]) to.set(i);
-              else to.reset(i);
-          }
-      }
-  };
-
   /** Definition of nD dart without information.
    * The_dart class describes an nD dart (basic element of a combinatorial or generalized map).
    * A dart is composed with descriptor towards its neighbors,
@@ -104,9 +74,6 @@ namespace CGAL {
   struct Dart_without_info: public Add_id<WithId>
   {
   public:
-    template <class, class>
-    friend class Dart_operations_;
-
     template <class, class, class, class>
     friend class Compact_container;
 
@@ -150,7 +117,6 @@ namespace CGAL {
     typedef typename Refs::Dart_const_descriptor                         Dart_const_descriptor;
     typedef typename Refs::Helper                                        Helper;
     typedef WithId                                                       Has_id;
-    typedef Dart_operations_<typename Refs::Concurrent_tag, Self> Dart_operations;
     using Type_for_compact_container=typename Refs::Type_for_compact_container;
 
 
@@ -201,17 +167,17 @@ namespace CGAL {
      * @param adart a dart.
      */
     Dart_without_info(const Dart_without_info& other) :
-      mattribute_descriptors(other.mattribute_descriptors)
+      mattribute_descriptors(other.mattribute_descriptors),
+      mmarks(other.mmarks)
     {
-      m_operations.copy_marks(other.mmarks, mmarks);
-
       for (unsigned int i=0; i<=dimension; ++i)
       { mf[i]=other.mf[i]; }
     }
 
     Self& operator=(const Self& other)
     {
-      m_operations.copy_marks(other.mmarks, mmarks);
+      mmarks = other.mmarks;
+
       mattribute_descriptors=other.mattribute_descriptors;
       for (unsigned int i=0; i<=dimension; ++i)
       { mf[i]=other.mf[i]; }
@@ -258,7 +224,7 @@ namespace CGAL {
      */
      void set_marks(const Bitset_type& amarks) const
     {
-         m_operations.copy_marks(amarks, mmarks);
+         mmarks = amarks;
      }
 
     /// @return a descriptor on the i-attribute
@@ -288,8 +254,6 @@ namespace CGAL {
 
     /// Attributes enabled
     typename Helper::Attribute_descriptors mattribute_descriptors;
-
-    Dart_operations m_operations;
   };
 
   // Dart definition with an info;

@@ -39,7 +39,7 @@ public:
    */
     AtomicBitset();
 
-    AtomicBitset(const AtomicBitset& other) = delete;
+    AtomicBitset(const AtomicBitset& other);
     AtomicBitset& operator=(const AtomicBitset& rhs);
 
     /**
@@ -130,6 +130,14 @@ private:
 // value-initialize to zero
 template <size_t N>
 inline AtomicBitset<N>::AtomicBitset() : data_() {}
+
+template <size_t N>
+AtomicBitset<N>::AtomicBitset(const AtomicBitset& other)
+{
+    for (int i = 0; i < kNumBlocks; i++) {
+        data_[i].store(other.data_[i].load());
+    }
+}
 
 template <size_t N>
 AtomicBitset<N>& AtomicBitset<N>::operator=(const AtomicBitset& rhs)
