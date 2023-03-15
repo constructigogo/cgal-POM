@@ -37,7 +37,7 @@ public:
 
     constexpr size_t size() const { return N; }
 private:
-    std::array<char,N> data_;
+    std::array<uint8_t ,N> data_;
 };
 
 // value-initialize to zero
