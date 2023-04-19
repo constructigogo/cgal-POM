@@ -155,7 +155,6 @@ void MainWindow::update_operations_entries(bool show)
 
 void MainWindow::onSceneChanged ()
 {
-    return;
   QApplication::setOverrideCursor( Qt::WaitCursor );
 
   LCC::size_type mark = scene.lcc->get_new_mark ();
