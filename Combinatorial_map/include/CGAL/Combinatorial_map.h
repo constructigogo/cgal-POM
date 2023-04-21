@@ -82,6 +82,52 @@ auto CM_ADL_opposite(Desc&& d, G&& g) {
    * Definition of generic dD Combinatorial map.
    */
 
+/**
+ * Specialization of methods that need a mutex to be thread-safe
+ */
+template<typename Concurrent_tag, class Map>
+struct Map_thread_safe_operations_
+{
+    typedef typename Map::Thread_safe_type Thread_safe_type;
+    typedef typename Map::Thread_safe_type_base Thread_safe_type_base;
+
+public:
+    //Nothing to be done in the non-concurrent case
+    inline void lock() const {}
+    inline void unlock() const {}
+
+    inline Thread_safe_type_base get_value(const Thread_safe_type& value) const
+    {
+        return value;
+    }
+};
+
+template<class Map>
+struct Map_thread_safe_operations_<CGAL::Tag_true, Map>
+{
+    typedef typename Map::Thread_safe_type Thread_safe_type;
+    typedef typename Map::Thread_safe_type_base Thread_safe_type_base;
+
+public:
+    inline void lock() const
+    {
+        m_mutex.lock();
+    }
+
+    inline void unlock() const
+    {
+        m_mutex.unlock();
+    }
+
+    inline Thread_safe_type_base get_value(const Thread_safe_type& value) const
+    {
+        return value.load();
+    }
+
+private:
+    mutable std::mutex m_mutex;
+};
+
 struct Combinatorial_map_tag {};
 struct Generalized_map_tag;
 
@@ -126,6 +172,9 @@ public:
     typedef typename Base::Dart_descriptor Dart_descriptor;
     typedef typename Base::Dart_const_descriptor Dart_const_descriptor;
     typedef typename Base::Dart_container Dart_container;
+    typedef typename Base::Bitset_type Bitset_type;
+    typedef typename Base::Thread_safe_type Thread_safe_type;
+    typedef typename Base::Thread_safe_type_base Thread_safe_type_base;
     typedef typename Base::size_type size_type;
     typedef typename Base::Helper Helper;
     typedef typename Base::Attributes Attributes;
@@ -134,6 +183,8 @@ public:
     typedef typename Base::Use_index Use_index;
     typedef typename Base::Dart_range Dart_range;
     typedef typename Base::Dart_const_range Dart_const_range;
+
+    typedef Map_thread_safe_operations_<typename Base::Concurrent_tag, Self> Map_operations;
 
     static const size_type NB_MARKS = Base::NB_MARKS;
     static const size_type INVALID_MARK = NB_MARKS;
@@ -165,7 +216,6 @@ public:
     using Base::is_empty;
     using Base::upper_bound_on_dart_ids;
     using Base::upper_bound_on_attribute_ids;
-
     /// Typedef for attributes
     template<int i>
     struct Attribute_type: public Base::template Attribute_type<i>
@@ -878,7 +928,7 @@ protected:
     // Initialize a given dart: all beta to null_dart_descriptor and all
     // attributes to null, marks are given.
     void init_dart(Dart_descriptor adart,
-                   const AtomicBitset<NB_MARKS>& amarks)
+                   const Bitset_type& amarks)
     {
         set_marks(adart, amarks);
 
@@ -1035,17 +1085,15 @@ public:
             throw Exception_no_more_available_mark();
         }
 
-        LOG_MESSAGE(std::cout << "locking get new mark" << std::endl;);
-        m_mutex.lock();
+        m_operations.lock();
         size_type m = mfree_marks_stack[mnb_used_marks];
         mused_marks_stack[mnb_used_marks] = m;
 
-        mindex_marks[m] = mnb_used_marks.load();
-        mnb_times_reserved_marks[m]=1;
+        mindex_marks[m] = m_operations.get_value(mnb_used_marks);
+        mnb_times_reserved_marks[m] = 1;
 
         ++mnb_used_marks;
-        LOG_MESSAGE(std::cout << "unlocking get new mark" << std::endl;);
-        m_mutex.unlock();
+        m_operations.unlock();
 
         CGAL_assertion(is_whole_map_unmarked(m));
 
@@ -1203,26 +1251,22 @@ public:
             return;
         }
 
-        LOG_MESSAGE(std::cout << "locking free mark" << std::endl;);
-        m_mutex.lock();
+        m_operations.lock();
 
         unmark_all(amark);
 
         // 1) We remove amark from the array mused_marks_stack by
         //    replacing it with the last mark in this array.
-        mused_marks_stack[mindex_marks[amark]] =
-                mused_marks_stack[--mnb_used_marks].load();
-        mindex_marks[mused_marks_stack[mnb_used_marks]] =
-                mindex_marks[amark].load();
+        mused_marks_stack[mindex_marks[amark]] = m_operations.get_value(mused_marks_stack[--mnb_used_marks]);
+        mindex_marks[mused_marks_stack[mnb_used_marks]] = m_operations.get_value(mindex_marks[amark]);
 
         // 2) We add amark in the array mfree_marks_stack and update its index.
         mfree_marks_stack[ mnb_used_marks ] = amark;
-        mindex_marks[amark] = mnb_used_marks.load();
+        mindex_marks[amark] = m_operations.get_value(mnb_used_marks);
 
         mnb_times_reserved_marks[amark]=0;
 
-        LOG_MESSAGE(std::cout << "unlocking free mark" << std::endl;);
-        m_mutex.unlock();
+        m_operations.unlock();
     }
 
     template <unsigned int i, unsigned int d=dimension>
@@ -2741,14 +2785,14 @@ protected:
      * @param amarks the marks to set.
      */
     void set_marks(Dart_const_descriptor adart,
-                   const AtomicBitset<NB_MARKS>& amarks) const
+                   const Bitset_type& amarks) const
     { set_dart_marks(adart, amarks ^ mmask_marks); }
 
     /** Get simultaneously all the marks of a given dart.
      * @param adart the dart.
      * @return allt the marks of adart.
      */
-    AtomicBitset<NB_MARKS> get_marks(Dart_const_descriptor adart) const
+    Bitset_type get_marks(Dart_const_descriptor adart) const
     { return get_dart_marks(adart) ^ mmask_marks; }
 
     /** Get the mask associated to a given mark.
@@ -4759,32 +4803,33 @@ public:
 
 protected:
     /// Number of times each mark is reserved. 0 if the mark is free.
-    mutable std::atomic<size_type> mnb_times_reserved_marks[NB_MARKS];
+    mutable Thread_safe_type mnb_times_reserved_marks[NB_MARKS];
 
     /// Mask marks to know the value of unmark dart, for each index i.
-    mutable AtomicBitset<NB_MARKS> mmask_marks;
+    mutable Bitset_type mmask_marks;
 
     /// Number of used marks.
-    mutable std::atomic<size_type> mnb_used_marks;
+    mutable Thread_safe_type mnb_used_marks;
 
     /// Index of each mark, in mfree_marks_stack or in mfree_marks_stack.
-    mutable std::atomic<size_type> mindex_marks[NB_MARKS];
+    mutable Thread_safe_type mindex_marks[NB_MARKS];
 
     /// "Stack" of free marks.
-    mutable std::atomic<size_type> mfree_marks_stack[NB_MARKS];
+    mutable Thread_safe_type mfree_marks_stack[NB_MARKS];
 
     /// "Stack" of used marks.
-    mutable std::atomic<size_type> mused_marks_stack[NB_MARKS];
+    mutable Thread_safe_type mused_marks_stack[NB_MARKS];
 
     /// Number of marked darts for each used marks.
-    mutable std::atomic<size_type> mnb_marked_darts[NB_MARKS];
+    mutable Thread_safe_type mnb_marked_darts[NB_MARKS];
 
     /// Automatic management of the attributes:
     /// true means attributes are always maintained updated during operations.
     bool automatic_attributes_management;
 
-    /// Mutex used for the thread-safety of operations done on the map
-    mutable std::mutex m_mutex;
+    /// Specializes operations done on the map for thread-safety depending on the
+    /// concurrent tag
+    mutable Map_operations m_operations;
 
     /// Tuple of unary and binary functors (for all non void attributes).
     typename Helper::Split_functors m_onsplit_functors;

@@ -147,7 +147,7 @@ public:
    */
     AtomicBitset();
 
-    AtomicBitset(const AtomicBitset&) = delete;
+    AtomicBitset(const AtomicBitset& other) = delete;
     AtomicBitset& operator=(const AtomicBitset& rhs);
 
     /**
@@ -240,7 +240,8 @@ template <size_t N>
 inline AtomicBitset<N>::AtomicBitset() : data_() {}
 
 template <size_t N>
-AtomicBitset<N>& AtomicBitset<N>::operator=(const AtomicBitset& rhs) {
+AtomicBitset<N>& AtomicBitset<N>::operator=(const AtomicBitset& rhs)
+{
     for (int i = 0; i < kNumBlocks; i++) {
         data_[i].store(rhs.data_[i].load());
     }
@@ -249,42 +250,49 @@ AtomicBitset<N>& AtomicBitset<N>::operator=(const AtomicBitset& rhs) {
 }
 
 template <size_t N>
-inline bool AtomicBitset<N>::set(size_t idx, std::memory_order order) {
+inline bool AtomicBitset<N>::set(size_t idx, std::memory_order order)
+{
     assert(idx < N);
     BlockType mask = kOne << bitOffset(idx);
     return data_[blockIndex(idx)].fetch_or(mask, order) & mask;
 }
 
 template <size_t N>
-inline bool AtomicBitset<N>::reset(size_t idx, std::memory_order order) {
+inline bool AtomicBitset<N>::reset(size_t idx, std::memory_order order)
+{
     assert(idx < N);
     BlockType mask = kOne << bitOffset(idx);
     return data_[blockIndex(idx)].fetch_and(~mask, order) & mask;
 }
 
 template <size_t N>
-inline void AtomicBitset<N>::reset() {
-    for (int i = 0; i < kNumBlocks; i++) {
+inline void AtomicBitset<N>::reset()
+{
+    for (int i = 0; i < kNumBlocks; i++)
+    {
         data_[i] = 0;
     }
 }
 
 template <size_t N>
 inline bool AtomicBitset<N>::set(
-        size_t idx, bool value, std::memory_order order) {
+        size_t idx, bool value, std::memory_order order)
+{
     return value ? set(idx, order) : reset(idx, order);
 }
 
 template <size_t N>
 inline bool AtomicBitset<N>::test(
-        size_t idx, std::memory_order order) const {
+        size_t idx, std::memory_order order) const
+{
     assert(idx < N);
     BlockType mask = kOne << bitOffset(idx);
     return data_[blockIndex(idx)].load(order) & mask;
 }
 
 template <size_t N>
-inline bool AtomicBitset<N>::flip(size_t idx, std::memory_order order) {
+inline bool AtomicBitset<N>::flip(size_t idx, std::memory_order order)
+{
     bool current = test(idx, order);
     BlockType mask = kOne << bitOffset(idx);
     if(current) {
@@ -296,7 +304,8 @@ inline bool AtomicBitset<N>::flip(size_t idx, std::memory_order order) {
 }
 
 template <size_t N>
-inline bool AtomicBitset<N>::operator[](size_t idx) const {
+inline bool AtomicBitset<N>::operator[](size_t idx) const
+{
     return test(idx);
 }
 
