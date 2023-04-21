@@ -96,6 +96,14 @@ namespace CGAL
     struct Get_concurrent_tag<T, true>
     { typedef CGAL::Tag_true type; };
 
+    BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_disable_thread_safe_tag,Disable_thread_safety,false)
+    template<typename T, bool typedefined=Has_disable_thread_safe_tag<T>::value >
+    struct Get_disable_thread_safe_tag
+    { typedef CGAL::Tag_false type; };
+    template<typename T>
+    struct Get_disable_thread_safe_tag<T, true>
+    { typedef CGAL::Tag_true type; };
+
     // Get the atomic bitset tag (whether or not to use the atomic bitset
     // when using the Concurrent_tag
     BOOST_MPL_HAS_XXX_TRAIT_NAMED_DEF(Has_char_bitset_tag,Use_char_bitset,false)
@@ -655,44 +663,68 @@ namespace CGAL
 
 
   // Helper class to define the bitset type depending on the the Concurrent_tag
-  template<typename Concurrent_tag, typename Char_bitset_tag, size_t N>
+  template<typename Concurrent_tag, typename Char_bitset_tag, typename Disable_thread_safe_tag, size_t N>
   struct Bitset_type
   {
     typedef std::bitset<N> type;
   };
 
-  // Always using std::bitset when the Concurrent_tag isn't used
+//  // Always using std::bitset when the Concurrent_tag isn't used
+//  template<typename Char_bitset_tag, typename Disable_thread_safe_tag, size_t N>
+//  struct Bitset_type<CGAL::Tag_false, Char_bitset_tag, Disable_thread_safe_tag, N>
+//  {
+//    typedef std::bitset<N> type;
+//  };
+
+   // Specialization when using the Concurrent_tag and the CharBitset
+   template<size_t N>
+   struct Bitset_type<CGAL::Tag_true, CGAL::Tag_true, CGAL::Tag_true, N>
+   {
+     typedef std::bitset<N> type;
+   };
+
+  // Specialization when using the Concurrent_tag but with thread-safety disabled
+  //--> using non-safe std::bitset
   template<typename Char_bitset_tag, size_t N>
-  struct Bitset_type<CGAL::Tag_false, Char_bitset_tag, N>
+  struct Bitset_type<CGAL::Tag_true, Char_bitset_tag, CGAL::Tag_true, N>
   {
     typedef std::bitset<N> type;
   };
 
   // Specialization when using the Concurrent_tag but not the CharBitset
-  template<typename Char_bitset_tag, size_t N>
-  struct Bitset_type<CGAL::Tag_true, Char_bitset_tag, N>
+  template<typename Char_bitset_tag, typename Disable_thread_safe_tag, size_t N>
+  struct Bitset_type<CGAL::Tag_true, Char_bitset_tag, Disable_thread_safe_tag, N>
   {
     typedef AtomicBitset<N> type;
   };
 
   // Specialization when using the Concurrent_tag and the CharBitset
-  template<size_t N>
-  struct Bitset_type<CGAL::Tag_true, CGAL::Tag_true, N>
+  template<typename Disable_thread_safe_tag, size_t N>
+  struct Bitset_type<CGAL::Tag_true, CGAL::Tag_true, Disable_thread_safe_tag, N>
   {
     typedef CharBitset<N> type;
   };
 
   // Helper class to define the type of the member
   // attributes of a Combinatorial_map depending on the Concurrent_tag
-  template<typename Concurrent_tag, typename base_type>
+  template<typename Concurrent_tag, typename Disable_thread_safe_tag, typename base_type>
   struct Thread_safe_type
   {
     typedef base_type type;
     typedef base_type base;
   };
 
+  //Specialization when the concurent tag is on but the thread-safety is off
+  //(Disable_thread_safe_tag is True) --> not using thread safe type
   template<typename base_type>
-  struct Thread_safe_type<CGAL::Tag_true, base_type>
+  struct Thread_safe_type<CGAL::Tag_true, CGAL::Tag_true, base_type>
+  {
+    typedef base_type type;
+    typedef base_type base;
+  };
+
+  template<typename Disable_thread_safe_tag, typename base_type>
+  struct Thread_safe_type<CGAL::Tag_true, Disable_thread_safe_tag, base_type>
   {
     typedef std::atomic<base_type> type;
     typedef base_type base;

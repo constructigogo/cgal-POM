@@ -84,7 +84,7 @@ auto CM_ADL_opposite(Desc&& d, G&& g) {
 /**
  * Specialization of methods that need a mutex to be thread-safe
  */
-template<typename Concurrent_tag, class Map>
+template<typename Concurrent_tag, typename Disable_thread_safe_tag, class Map>
 struct Map_thread_safe_operations_
 {
     typedef typename Map::Thread_safe_type Thread_safe_type;
@@ -101,8 +101,8 @@ public:
     }
 };
 
-template<class Map>
-struct Map_thread_safe_operations_<CGAL::Tag_true, Map>
+template<typename Disable_thread_safe_tag, class Map>
+struct Map_thread_safe_operations_<CGAL::Tag_true, Disable_thread_safe_tag, Map>
 {
     typedef typename Map::Thread_safe_type Thread_safe_type;
     typedef typename Map::Thread_safe_type_base Thread_safe_type_base;
@@ -125,6 +125,23 @@ public:
 
 private:
     mutable std::mutex m_mutex;
+};
+
+template<class Map>
+struct Map_thread_safe_operations_<CGAL::Tag_true, CGAL::Tag_true, Map>
+{
+    typedef typename Map::Thread_safe_type Thread_safe_type;
+    typedef typename Map::Thread_safe_type_base Thread_safe_type_base;
+
+public:
+    //Nothing to be done in the non-concurrent case
+    inline void lock() const {}
+    inline void unlock() const {}
+
+    inline Thread_safe_type_base get_value(const Thread_safe_type& value) const
+    {
+        return value;
+    }
 };
 
 struct Combinatorial_map_tag {};
@@ -183,7 +200,7 @@ public:
     typedef typename Base::Dart_range Dart_range;
     typedef typename Base::Dart_const_range Dart_const_range;
 
-    typedef Map_thread_safe_operations_<typename Base::Concurrent_tag, Self> Map_operations;
+    typedef Map_thread_safe_operations_<typename Base::Concurrent_tag, typename Base::Disable_thread_safe_tag, Self> Map_operations;
 
     static const size_type NB_MARKS = Base::NB_MARKS;
     static const size_type INVALID_MARK = NB_MARKS;
@@ -242,8 +259,6 @@ public:
      */
     Combinatorial_map_base()
     {
-        std::cout << sizeof(Dart) << std::endl;
-
         CGAL_static_assertion_msg(Helper::nb_attribs<=dimension+1,
                                   "Too many attributes in the tuple Attributes_enabled");
         this->init_storage();

@@ -152,8 +152,9 @@ public:
 #ifdef CMAP_WITH_INDEX
   using Use_index=CGAL::Tag_true;
 
-  typedef CGAL::Tag_true Use_concurrent_container;
-  //typedef CGAL::Tag_true Use_char_bitset;
+  //typedef CGAL::Tag_true Use_concurrent_container;
+  typedef CGAL::Tag_true Use_char_bitset;
+  //typedef CGAL::Tag_true Disable_thread_safety;
 #endif // CMAP_WITH_INDEX
 
   template < class Refs >
