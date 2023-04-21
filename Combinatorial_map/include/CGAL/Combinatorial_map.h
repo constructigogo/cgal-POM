@@ -22,7 +22,6 @@
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_group_functors.h>
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_copy_functors.h>
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_sewable.h>
-#include <CGAL/Combinatorial_map_concurrent_bitset.h>
 
 #include <CGAL/Combinatorial_map_storages.h>
 #include <CGAL/Combinatorial_map_storages_with_index.h>
@@ -243,6 +242,8 @@ public:
      */
     Combinatorial_map_base()
     {
+        std::cout << sizeof(Dart) << std::endl;
+
         CGAL_static_assertion_msg(Helper::nb_attribs<=dimension+1,
                                   "Too many attributes in the tuple Attributes_enabled");
         this->init_storage();

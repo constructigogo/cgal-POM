@@ -15,10 +15,11 @@
 #include <CGAL/tuple.h>
 #include <CGAL/Compact_container.h>
 #include <CGAL/Concurrent_compact_container.h>
-#include <CGAL/Combinatorial_map_concurrent_bitset.h>
-#include <CGAL/Combinatorial_map_concurrent_charbitset.h>
-#include <iostream>
+#include <CGAL/Combinatorial_map_atomic_bitset.h>
+#include <CGAL/Combinatorial_map_charbitset.h>
+#include <bitset>
 #include <cstdint>
+#include <iostream>
 #include <type_traits>
 
 #include <boost/function.hpp>
@@ -653,9 +654,16 @@ namespace CGAL
   };
 
 
-  // Helper class to define the bitset type depending on the Concurrent_tag
+  // Helper class to define the bitset type depending on the the Concurrent_tag
   template<typename Concurrent_tag, typename Char_bitset_tag, size_t N>
   struct Bitset_type
+  {
+    typedef std::bitset<N> type;
+  };
+
+  // Always using std::bitset when the Concurrent_tag isn't used
+  template<typename Char_bitset_tag, size_t N>
+  struct Bitset_type<CGAL::Tag_false, Char_bitset_tag, N>
   {
     typedef std::bitset<N> type;
   };
@@ -667,20 +675,11 @@ namespace CGAL
     typedef AtomicBitset<N> type;
   };
 
-  // Specialization when the Concurrent_tag has been forgotten but the
-  // Char_bitset_tag is nonetheless specified
-  template<size_t N>
-  struct Bitset_type<CGAL::Tag_false, CGAL::Tag_true, N>
-  {
-    typedef std::bitset<N> type;
-  };
-
   // Specialization when using the Concurrent_tag and the CharBitset
   template<size_t N>
   struct Bitset_type<CGAL::Tag_true, CGAL::Tag_true, N>
   {
-    //typedef std::bitset<N> type;//TODO remove this line, it's just a placeholder
-    typedef CharBitset<N> type;// TODO decomment this line
+    typedef CharBitset<N> type;
   };
 
   // Helper class to define the type of the member

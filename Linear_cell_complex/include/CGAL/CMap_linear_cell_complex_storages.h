@@ -14,7 +14,6 @@
 
 #include <CGAL/Compact_container.h>
 #include <CGAL/Concurrent_compact_container.h>
-#include <CGAL/Combinatorial_map_concurrent_bitset.h>
 #include <CGAL/Dart.h>
 #include <CGAL/Handle_hash_function.h>
 

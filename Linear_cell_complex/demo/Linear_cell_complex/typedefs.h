@@ -153,6 +153,7 @@ public:
   using Use_index=CGAL::Tag_true;
 
   typedef CGAL::Tag_true Use_concurrent_container;
+  //typedef CGAL::Tag_true Use_char_bitset;
 #endif // CMAP_WITH_INDEX
 
   template < class Refs >
@@ -166,6 +167,7 @@ public:
   };
 };
 
+//typedef CGAL::Linear_cell_complex_for_combinatorial_map<3,3,Mytraits,Myitems> LCC;
 typedef CGAL::Linear_cell_complex_for_combinatorial_map<3,3,Mytraits,Myitems> LCC;
 typedef LCC::Dart_descriptor      Dart_descriptor;
 typedef LCC::Vertex_attribute Vertex;
